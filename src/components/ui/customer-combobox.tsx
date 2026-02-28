@@ -75,7 +75,7 @@ export function CustomerCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput
             placeholder="Tìm theo tên hoặc ID khách hàng..."
             value={search}
