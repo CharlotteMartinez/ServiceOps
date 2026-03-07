@@ -72,7 +72,7 @@ export function CustomerCombobox({
   }, [search, initialCustomers]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={false}>
+    <Popover open={open} onOpenChange={setOpen} modal={true}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -96,14 +96,18 @@ export function CustomerCombobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command className="h-[300px]" shouldFilter={false}>
           <CommandInput
             placeholder="Tìm theo tên hoặc ID khách hàng..."
             value={search}
             onValueChange={setSearch}
           />
-          <CommandList className="max-h-[250px] overflow-y-auto">
+          <CommandList
+            className="max-h-[250px] overflow-y-auto"
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
             {loading ? (
               <div className="flex items-center justify-center p-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
