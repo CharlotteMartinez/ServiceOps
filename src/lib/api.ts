@@ -1942,6 +1942,9 @@ export async function fetchCustomers(): Promise<ApiResponse<Customer[]>> {
         method: "GET", 
         path: "/webhook/get-customer-list" 
     });
+    
+    console.log('[fetchCustomers] Raw Webhook Response:', res);
+    
     if (!res.success) return res as any;
     
     const payload = res.data as any;
@@ -1949,6 +1952,37 @@ export async function fetchCustomers(): Promise<ApiResponse<Customer[]>> {
     
     // Handle different response structures
     // Response format: { data: [{ "customer-id": "...", "customer-name": "...", ... }] }
+    if (Array.isArray(payload)) {
+        const first = payload.find(Boolean);
+        if (first?.data && Array.isArray(first.data)) {
+            customers = first.data;
+        } else if (Array.isArray(first)) {
+            customers = first;
+        }
+    } else if (payload?.data && Array.isArray(payload.data)) {
+        customers = payload.data;
+    } else if (Array.isArray(payload)) {
+        customers = payload;
+    }
+    
+    
+    return { success: true, status: 200, data: customers };
+}
+
+// Search Customers by name for dynamic dropdown
+export async function searchCustomers(searchText: string): Promise<ApiResponse<Customer[]>> {
+    // API is GET, so send name param in query string
+    const res = await apiRequest<{ data?: Customer[] } | Array<{ data?: Customer[] }>>({ 
+        method: "GET", 
+        path: `https://automation.osi.vn/webhook/get-customer-by-text?name=${encodeURIComponent(searchText)}`
+    });
+    
+    if (!res.success) return res as any;
+    
+    const payload = res.data as any;
+    let customers: Customer[] = [];
+    
+    // Handle different response structures
     if (Array.isArray(payload)) {
         const first = payload.find(Boolean);
         if (first?.data && Array.isArray(first.data)) {
