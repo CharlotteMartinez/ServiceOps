@@ -1154,24 +1154,41 @@ export async function fetchDeliveryInstallTicketDetail(ticketId: string): Promis
     }
 
     const d = detailRaw || ({} as ExternalDeliveryDetail);
+    console.log('[fetchDeliveryInstallTicketDetail] detailRaw fields:', {
+        has_products: Array.isArray(d.products),
+        products_count: Array.isArray(d.products) ? d.products.length : 0,
+        has_product_code: Array.isArray((d as any).product_code),
+        product_code_count: Array.isArray((d as any).product_code) ? (d as any).product_code.length : 0,
+        has_product_list: Array.isArray((d as any).product_list),
+        product_list_count: Array.isArray((d as any).product_list) ? (d as any).product_list.length : 0,
+        raw_product_code: (d as any).product_code,
+        raw_product_list: (d as any).product_list,
+        raw_products: d.products,
+    });
 
-    // Filter out products with category "Thiết bị"
-    const goodsInfo = Array.isArray(d.products)
-        ? d.products
-            .filter((p) => p && (p.name || p.sku))
-            .filter((p) => {
-                const cat = String((p as any)?.category || "").toLowerCase();
-                return !(cat.includes("thiết bị") || cat.includes("thiet bi"));
-            })
-            .map((p) => ({ sku: p.sku, name: p.name || "Hàng hóa", quantity: Number(p.quantity || 1) }))
-        : [];
+    // The API can return either:
+    // (a) d.products: array of objects with {sku, name, quantity, ...}
+    // (b) d.product_code: string[] + d.product_list: string[] (flat arrays from n8n)
+    const rawProductCodes: string[] = Array.isArray((d as any).product_code) ? (d as any).product_code : [];
+    const rawProductList: string[] = Array.isArray((d as any).product_list) ? (d as any).product_list : [];
+    const hasNewFormat = rawProductCodes.length > 0 || rawProductList.length > 0;
+
+    const goodsInfo = hasNewFormat
+        ? rawProductCodes.map((code, idx) => ({ sku: code, name: rawProductList[idx] || code || "Hàng hóa", quantity: 1 }))
+        : Array.isArray(d.products)
+            ? d.products
+                .filter((p) => p && (p.name || p.sku))
+                .map((p) => ({ sku: p.sku, name: p.name || "Hàng hóa", quantity: Number(p.quantity || 1) }))
+            : [];
+
+    console.log('[fetchDeliveryInstallTicketDetail] goodsInfo result:', { hasNewFormat, count: goodsInfo.length, goodsInfo });
     const deviceInfo = Array.isArray(d.devices)
         ? d.devices
             .filter((dv) => dv && (dv.name || dv.deviceCode || dv.serialNumber))
             .map((dv) => ({ model: dv.name || dv.deviceCode || "Thiết bị", serial: dv.serialNumber || undefined, quantity: 1 }))
         : [];
 
-    const titleBase = (d.products || []).map((p) => p?.name).filter(Boolean).join(", ") || d.customer_name || "Ticket giao hàng / lắp đặt";
+    const titleBase = goodsInfo.map((p) => p?.name).filter(Boolean).join(", ") || d.customer_name || "Ticket giao hàng / lắp đặt";
 
     const detail: TicketDetail = {
         id: d.ticket_id || ticketId,
@@ -1191,18 +1208,8 @@ export async function fetchDeliveryInstallTicketDetail(ticketId: string): Promis
         },
         orderInfo: {
             orderCode: d.orderDetail?.orderCode || d.order_id,
-            itemsCount: Array.isArray(d.products)
-                ? d.products.filter((p) => {
-                    const cat = String((p as any)?.category || "").toLowerCase();
-                    return !(cat.includes("thiết bị") || cat.includes("thiet bi"));
-                  }).length || undefined
-                : undefined,
-            secretCodes: (Array.isArray(d.products) ? d.products : [])
-                .filter((p) => {
-                    const cat = String((p as any)?.category || "").toLowerCase();
-                    return !(cat.includes("thiết bị") || cat.includes("thiet bi"));
-                })
-                .map((p) => ({ code: p.sku || "", name: p.name || "Hàng hóa", quantity: Number(p.quantity || 1) })),
+            itemsCount: goodsInfo.length || undefined,
+            secretCodes: goodsInfo.map((p) => ({ code: p.sku || "", name: p.name || "Hàng hóa", quantity: Number(p.quantity || 1) })),
             customerName: d.orderDetail?.customerName,
             totalAmount: d.orderDetail?.totalAmount,
             orderDate: d.orderDetail?.orderDate,

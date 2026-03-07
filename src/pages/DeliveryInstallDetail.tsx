@@ -114,11 +114,11 @@ const DeliveryInstallDetail = () => {
       console.log('[DeliveryInstall] handleImageChange event triggered');
       const files = e?.target?.files;
       console.log('[DeliveryInstall] handleImageChange - files:', files);
-      
+
       if (files && files.length > 0) {
         const newFiles = Array.from(files);
         console.log('[DeliveryInstall] handleImageChange - newFiles:', newFiles.length, 'files');
-        
+
         // Validate and process each file
         const validFiles: File[] = [];
         newFiles.forEach((file, idx) => {
@@ -134,7 +134,7 @@ const DeliveryInstallDetail = () => {
             console.warn(`[DeliveryInstall] Invalid file at index ${idx}`);
           }
         });
-        
+
         if (validFiles.length > 0) {
           setImages((prev) => {
             const updated = [...prev, ...validFiles];
@@ -284,7 +284,7 @@ const DeliveryInstallDetail = () => {
   const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
-    
+
     // Validate: Phải có ít nhất 1 ảnh
     if (images.length === 0) {
       notify.error("Vui lòng chụp ít nhất 1 ảnh kết quả");
@@ -301,22 +301,22 @@ const DeliveryInstallDetail = () => {
         });
         return fileToBase64(f);
       }));
-      
+
       // Log base64 sizes
       base64Images.forEach((base64, idx) => {
         const sizeInKB = (base64.length * 3) / 4 / 1024;
         const sizeInMB = sizeInKB / 1024;
         console.log(`[DeliveryInstall] Base64 ${idx + 1}: ${base64.length} chars (${sizeInKB.toFixed(2)} KB / ${sizeInMB.toFixed(2)} MB)`);
-        
+
         // Warn if image is too large
         if (sizeInMB > 1) {
           console.warn(`[DeliveryInstall] Image ${idx + 1} is quite large: ${sizeInMB.toFixed(2)} MB`);
         }
       });
-      
+
       const totalBase64Length = base64Images.reduce((sum, b) => sum + b.length, 0);
       const totalSizeInMB = (totalBase64Length * 3) / 4 / 1024 / 1024;
-      
+
       console.log('[DeliveryInstall] Submitting report:', {
         ticketId: id,
         imagesCount: images.length,
@@ -328,7 +328,7 @@ const DeliveryInstallDetail = () => {
       });
 
       console.log('[DeliveryInstall] Sending request to API...');
-      
+
       const requestStartTime = Date.now();
       const res = await completeDeliveryInstallTicket({
         ticketId: id,
@@ -337,7 +337,7 @@ const DeliveryInstallDetail = () => {
         serials: selectedDevices,
         base64Images,
       });
-      
+
       const requestDuration = Date.now() - requestStartTime;
       console.log(`[DeliveryInstall] API Response received in ${requestDuration}ms:`, res);
 
@@ -359,7 +359,7 @@ const DeliveryInstallDetail = () => {
         response: err?.response,
         body: err?.response?.data
       });
-      
+
       let errorMessage = "Lỗi không xác định";
       if (err?.response?.data?.message) {
         errorMessage = err.response.data.message;
@@ -368,7 +368,7 @@ const DeliveryInstallDetail = () => {
       } else if (typeof err === 'string') {
         errorMessage = err;
       }
-      
+
       notify.error("Hoàn tất thất bại", { description: errorMessage });
     }
   };
@@ -378,7 +378,7 @@ const DeliveryInstallDetail = () => {
       <DetailTopNav title="Chi tiết Ticket" />
       <main className="container mx-auto px-4 py-6 pb-24 space-y-4">
         {/* Thông tin trạng thái và loại ticket */}
-        
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1">
             {id && (
@@ -461,7 +461,7 @@ const DeliveryInstallDetail = () => {
           </div>
         )}
 
-        
+
         {isLoading && (
           <div className="space-y-3">
             <Skeleton className="h-6 w-1/2" />
@@ -544,15 +544,23 @@ const DeliveryInstallDetail = () => {
                       <TableRow>
                         <TableHead className="w-[140px]">Mã hàng</TableHead>
                         <TableHead>Tên hàng</TableHead>
-                        <TableHead className="w-[80px] text-right">SL</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {data.orderInfo.secretCodes.map((it, idx) => (
                         <TableRow key={idx} className="hover:bg-muted/50">
                           <TableCell className="font-mono text-xs text-muted-foreground">{it.code}</TableCell>
-                          <TableCell>{it.name || "Mặt hàng"}</TableCell>
-                          <TableCell className="text-right">x{it.quantity || 1}</TableCell>
+                          <TableCell>
+                            {Array.isArray(it.name) ? (
+                              <ul className="list-disc pl-4 space-y-1">
+                                {it.name.map((n: string, i: number) => (
+                                  <li key={i}>{n}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="whitespace-pre-wrap">{it.name || "Mặt hàng"}</div>
+                            )}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -568,7 +576,7 @@ const DeliveryInstallDetail = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[180px]">S/N hoặc Mã TB</TableHead>
+                        <TableHead className="w-[140px]">S/N hoặc Mã TB</TableHead>
                         <TableHead>Tên thiết bị</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -576,7 +584,17 @@ const DeliveryInstallDetail = () => {
                       {data.deviceInfo.map((d, idx) => (
                         <TableRow key={idx} className="hover:bg-muted/50">
                           <TableCell className="font-mono text-xs text-muted-foreground">{d.serial || `TB-${idx + 1}`}</TableCell>
-                          <TableCell>{d.model || "Thiết bị"}</TableCell>
+                          <TableCell>
+                            {Array.isArray(d.model) ? (
+                              <ul className="list-disc pl-4 space-y-1">
+                                {d.model.map((m: string, i: number) => (
+                                  <li key={i}>{m}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="whitespace-pre-wrap">{d.model || "Thiết bị"}</div>
+                            )}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -688,13 +706,13 @@ const DeliveryInstallDetail = () => {
       <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-3 flex items-center gap-2">
           {data && isAssigned && (
-            <Button onClick={async () => { 
-              if (!id) return; 
-              const res = await acceptDeliveryInstallTicket(id); 
-              if (res.success) { 
+            <Button onClick={async () => {
+              if (!id) return;
+              const res = await acceptDeliveryInstallTicket(id);
+              if (res.success) {
                 setShowSuccessModal(true);
-                await refetch(); 
-              } 
+                await refetch();
+              }
             }} size="lg" className="flex-1">
               <PlayCircle />
               Tiếp nhận thực hiện
@@ -740,11 +758,11 @@ const DeliveryInstallDetail = () => {
                 Ticket #{id} đã chuyển sang trạng thái đang thực hiện.
               </p>
             </div>
-            <Button 
+            <Button
               onClick={() => {
                 setShowSuccessModal(false);
                 navigate("/delivery-install");
-              }} 
+              }}
               className="w-full"
             >
               Đóng

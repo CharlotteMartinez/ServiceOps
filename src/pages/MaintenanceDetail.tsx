@@ -147,7 +147,7 @@ const MaintenanceDetail = () => {
   const [firstImages, setFirstImages] = useState<File[]>([]);
   // Prefill First Response when opening dialog
   const openFirstResponse = () => {
-    setFirstTime(data?.firstResponse?.time ? data!.firstResponse!.time!.slice(0,16) : "");
+    setFirstTime(data?.firstResponse?.time ? data!.firstResponse!.time!.slice(0, 16) : "");
     setFirstNote(data?.firstResponse?.note || "");
     setFirstImages([]);
     setOpenFirst(true);
@@ -265,8 +265,8 @@ const MaintenanceDetail = () => {
   };
   // Prefill Supplier Instruction when opening dialog
   const openSupplierInstruction = () => {
-    setSupplierContactTime(data?.supplierInstruction?.contactTime ? data!.supplierInstruction!.contactTime!.slice(0,16) : "");
-    setSupplierResponseTime(data?.supplierInstruction?.responseTime ? data!.supplierInstruction!.responseTime!.slice(0,16) : "");
+    setSupplierContactTime(data?.supplierInstruction?.contactTime ? data!.supplierInstruction!.contactTime!.slice(0, 16) : "");
+    setSupplierResponseTime(data?.supplierInstruction?.responseTime ? data!.supplierInstruction!.responseTime!.slice(0, 16) : "");
     setSupplierNote(data?.supplierInstruction?.note || "");
     setOpenSupplier(true);
   };
@@ -307,7 +307,7 @@ const MaintenanceDetail = () => {
           description: "Thông tin liên hệ của ticket đã được lưu.",
           action: {
             label: "Đóng",
-            onClick: () => {},
+            onClick: () => { },
           },
         });
         // Also show shadcn toast (ensures visibility even if Sonner disabled)
@@ -319,7 +319,7 @@ const MaintenanceDetail = () => {
     onError: (err: any) => {
       sonnerToast.error("Cập nhật thất bại", {
         description: err?.message || "Vui lòng thử lại.",
-        action: { label: "Đóng", onClick: () => {} },
+        action: { label: "Đóng", onClick: () => { } },
       });
     },
   });
@@ -335,7 +335,7 @@ const MaintenanceDetail = () => {
     setDeviceSerial(data?.maintenanceExtra?.serialNumber || "");
     setDeviceBrand(data?.maintenanceExtra?.deviceBrand || "");
     setDeviceModel(data?.maintenanceExtra?.deviceModel || "");
-    setDeviceInstallDate(data?.maintenanceExtra?.installationDate ? data!.maintenanceExtra!.installationDate!.slice(0,16) : "");
+    setDeviceInstallDate(data?.maintenanceExtra?.installationDate ? data!.maintenanceExtra!.installationDate!.slice(0, 16) : "");
     setSerialError("");
     setOpenDeviceEdit(true);
   };
@@ -349,7 +349,7 @@ const MaintenanceDetail = () => {
     },
     onSuccess: (res) => {
       const info = res.data || {};
-      if (info["install-date"]) setDeviceInstallDate((info["install-date"] as string).slice(0,16));
+      if (info["install-date"]) setDeviceInstallDate((info["install-date"] as string).slice(0, 16));
       if (info.brand) setDeviceBrand(info.brand);
       if (info.model) setDeviceModel(info.model);
     },
@@ -474,11 +474,11 @@ const MaintenanceDetail = () => {
                     "install-date": deviceInstallDate || undefined,
                   });
                   if (res.success) {
-                    sonnerToast.success("Đã cập nhật thông tin thiết bị", { action: { label: "Đóng", onClick: () => {} } });
+                    sonnerToast.success("Đã cập nhật thông tin thiết bị", { action: { label: "Đóng", onClick: () => { } } });
                     setOpenDeviceEdit(false);
                     qc.invalidateQueries({ queryKey: ["ticket-detail", "maintenance", id] });
                   } else {
-                    sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => {} } });
+                    sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => { } } });
                   }
                 }}>Cập nhật</Button>
               </div>
@@ -525,11 +525,11 @@ const MaintenanceDetail = () => {
                   if (!id) return;
                   const res = await updateMaintenanceTypeCategory(id, { type: selectedType || undefined, category: selectedCategory || undefined });
                   if (res.success) {
-                    sonnerToast.success("Đã cập nhật phân loại", { action: { label: "Đóng", onClick: () => {} } });
+                    sonnerToast.success("Đã cập nhật phân loại", { action: { label: "Đóng", onClick: () => { } } });
                     setOpenIssueEdit(false);
                     qc.invalidateQueries({ queryKey: ["ticket-detail", "maintenance", id] });
                   } else {
-                    sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => {} } });
+                    sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => { } } });
                   }
                 }}>Cập nhật</Button>
               </div>
@@ -544,7 +544,7 @@ const MaintenanceDetail = () => {
             </div>
           </div>
         )}
-        
+
         {/* Classification and Status Pills */}
         {data && normalizedStatus && (
           <div className="flex justify-between gap-3 mb-4">
@@ -620,130 +620,130 @@ const MaintenanceDetail = () => {
 
             {/* Maintenance flow sections as info blocks */}
             {!isAssigned && (
-            <>
-            <Section title="First Response" rightSlot={<button onClick={openFirstResponse} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><PencilLine className="h-4 w-4" />Cập nhật</button>}>
-              {data.firstResponse?.time != "undefined" || data.firstResponse?.note != "undefined" ? (
-                <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-sm">
-                  <div className="space-y-2">
-                    {data.firstResponse?.time && <div><span className="text-muted-foreground">Thời gian:</span> {formatDateTime(data.firstResponse.time)}</div>}
-                    {data.firstResponse?.note && <div><span className="text-muted-foreground">Nội dung:</span> {data.firstResponse.note}</div>}
-                  </div>
-                  {data.firstResponse?.imageUrls && data.firstResponse.imageUrls.length > 0 ? (
-                    <img src={data.firstResponse.imageUrls[0]} alt="first-response" className="h-20 w-20 object-cover rounded border justify-self-end" />
-                  ) : null}
-                </div>
-              ) : (
-                <div className="flex items-center">
-                  <Button variant="outline" size="sm" onClick={() => setOpenFirst(true)} className="w-full">Ghi nhận</Button>
-                </div>
-              )}
-            </Section>
+              <>
+                <Section title="First Response" rightSlot={<button onClick={openFirstResponse} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><PencilLine className="h-4 w-4" />Cập nhật</button>}>
+                  {data.firstResponse?.time != "undefined" || data.firstResponse?.note != "undefined" ? (
+                    <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-sm">
+                      <div className="space-y-2">
+                        {data.firstResponse?.time && <div><span className="text-muted-foreground">Thời gian:</span> {formatDateTime(data.firstResponse.time)}</div>}
+                        {data.firstResponse?.note && <div><span className="text-muted-foreground">Nội dung:</span> {data.firstResponse.note}</div>}
+                      </div>
+                      {data.firstResponse?.imageUrls && data.firstResponse.imageUrls.length > 0 ? (
+                        <img src={data.firstResponse.imageUrls[0]} alt="first-response" className="h-20 w-20 object-cover rounded border justify-self-end" />
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <Button variant="outline" size="sm" onClick={() => setOpenFirst(true)} className="w-full">Ghi nhận</Button>
+                    </div>
+                  )}
+                </Section>
 
-            <Section
-              title="Supplier Instruction"
-              rightSlot={
-                <button
-                  onClick={openSupplierInstruction}
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium"
+                <Section
+                  title="Supplier Instruction"
+                  rightSlot={
+                    <button
+                      onClick={openSupplierInstruction}
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium"
+                    >
+                      + Ghi nhận
+                    </button>
+                  }
                 >
-                  + Ghi nhận
-                </button>
-              }
-            >
-              {supplierInstructionLogs.length > 0 ? (
-                <div className="space-y-3">
-                  {supplierInstructionLogs.map((log, idx) => {
-                    const contactTime = isNonEmpty(log?.contactTime || log?.contact_time) ? formatDateTime(log?.contactTime || log?.contact_time) : "";
-                    const responseTime = isNonEmpty(log?.responseTime || log?.response_time) ? formatDateTime(log?.responseTime || log?.response_time) : "";
-                    const responseContent = isNonEmpty(log?.responseContent || log?.response_content) ? (log?.responseContent || log?.response_content) : "";
-                    const hasDetails = Boolean(contactTime || responseTime || responseContent);
-                    return (
-                      <div key={log?.contactCode || log?.contact_code || idx} className="relative rounded-lg border border-border/70 p-3 pl-5 bg-muted/30">
-                        <span className="absolute left-2 top-4 h-2 w-2 rounded-full bg-primary"></span>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lần {idx + 1}</div>
-                          {/* {(log?.contactCode || log?.contact_code) && (
+                  {supplierInstructionLogs.length > 0 ? (
+                    <div className="space-y-3">
+                      {supplierInstructionLogs.map((log, idx) => {
+                        const contactTime = isNonEmpty(log?.contactTime || log?.contact_time) ? formatDateTime(log?.contactTime || log?.contact_time) : "";
+                        const responseTime = isNonEmpty(log?.responseTime || log?.response_time) ? formatDateTime(log?.responseTime || log?.response_time) : "";
+                        const responseContent = isNonEmpty(log?.responseContent || log?.response_content) ? (log?.responseContent || log?.response_content) : "";
+                        const hasDetails = Boolean(contactTime || responseTime || responseContent);
+                        return (
+                          <div key={log?.contactCode || log?.contact_code || idx} className="relative rounded-lg border border-border/70 p-3 pl-5 bg-muted/30">
+                            <span className="absolute left-2 top-4 h-2 w-2 rounded-full bg-primary"></span>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lần {idx + 1}</div>
+                              {/* {(log?.contactCode || log?.contact_code) && (
                             <Badge variant="secondary" className="text-[11px]">
                               {log?.contactCode || log?.contact_code}
                             </Badge>
                           )} */}
-                        </div>
-                        {hasDetails ? (
-                          <div className="text-sm space-y-1.5">
-                            {contactTime && (
-                              <div>
-                                <span className="text-muted-foreground">Liên hệ lúc:</span> {contactTime}
+                            </div>
+                            {hasDetails ? (
+                              <div className="text-sm space-y-1.5">
+                                {contactTime && (
+                                  <div>
+                                    <span className="text-muted-foreground">Liên hệ lúc:</span> {contactTime}
+                                  </div>
+                                )}
+                                {responseTime && (
+                                  <div>
+                                    <span className="text-muted-foreground">Phản hồi lúc:</span> {responseTime}
+                                  </div>
+                                )}
+                                {responseContent && (
+                                  <div>
+                                    <span className="text-muted-foreground">Nội dung:</span> {responseContent}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                            {responseTime && (
-                              <div>
-                                <span className="text-muted-foreground">Phản hồi lúc:</span> {responseTime}
-                              </div>
-                            )}
-                            {responseContent && (
-                              <div>
-                                <span className="text-muted-foreground">Nội dung:</span> {responseContent}
-                              </div>
+                            ) : (
+                              <div className="text-xs text-muted-foreground italic">Chưa có thông tin chi tiết</div>
                             )}
                           </div>
-                        ) : (
-                          <div className="text-xs text-muted-foreground italic">Chưa có thông tin chi tiết</div>
-                        )}
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">Chưa ghi nhận</div>
+                  )}
+                </Section>
+
+                {(hasStartTime || hasStartLocation || hasStartImage) ? (
+                  <Section title="Bắt đầu thực hiện" icon={<PlayCircle className="h-5 w-5" />} accentClass="text-primary">
+                    <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-sm">
+                      <div className="space-y-2">
+                        {hasStartTime && <div><span className="text-muted-foreground">Thời gian:</span> {formatDateTime(startTimeVal)}</div>}
+                        {hasStartLocation && <div><span className="text-muted-foreground">Vị trí:</span> {startLocationVal}</div>}
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground italic">Chưa ghi nhận</div>
-              )}
-            </Section>
+                      {hasStartImage ? (
+                        <img src={validStartImage as string} alt="start" className="h-20 w-20 object-cover rounded border justify-self-end" />
+                      ) : null}
+                    </div>
+                  </Section>
+                ) : (
+                  // <Section title="Bắt đầu thực hiện" icon={<PlayCircle className="h-5 w-5" />} accentClass="text-primary">
+                  //   <div className="flex items-center justify-between">
+                  //     <span className="text-sm text-muted-foreground">Chưa có thông tin</span>
+                  //     <Button variant="outline" size="sm" onClick={openStartDialog}>Bắt đầu thực hiện</Button>
+                  //   </div>
+                  // </Section>
+                  <div></div>
+                )}
 
-            {(hasStartTime || hasStartLocation || hasStartImage) ? (
-              <Section title="Bắt đầu thực hiện" icon={<PlayCircle className="h-5 w-5" />} accentClass="text-primary">
-                <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-sm">
-                  <div className="space-y-2">
-                    {hasStartTime && <div><span className="text-muted-foreground">Thời gian:</span> {formatDateTime(startTimeVal)}</div>}
-                    {hasStartLocation && <div><span className="text-muted-foreground">Vị trí:</span> {startLocationVal}</div>}
-                  </div>
-                  {hasStartImage ? (
-                    <img src={validStartImage as string} alt="start" className="h-20 w-20 object-cover rounded border justify-self-end" />
-                  ) : null}
-                </div>
-              </Section>
-            ) : (
-              // <Section title="Bắt đầu thực hiện" icon={<PlayCircle className="h-5 w-5" />} accentClass="text-primary">
-              //   <div className="flex items-center justify-between">
-              //     <span className="text-sm text-muted-foreground">Chưa có thông tin</span>
-              //     <Button variant="outline" size="sm" onClick={openStartDialog}>Bắt đầu thực hiện</Button>
-              //   </div>
-              // </Section>
-              <div></div>
-            )}
-
-            {(data.resultRecord?.time != "undefined" || data.maintenanceExtra?.completeLocation != "undefined") ? (
-              <Section title="Kết quả thực hiện" icon={<CheckCircle className="h-5 w-5" />} accentClass="text-emerald-600">
-                <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-sm">
-                  <div className="space-y-2">
-                    {data.resultRecord?.time && <div><span className="text-muted-foreground">Thời gian:</span> {formatDateTime(data.resultRecord.time)}</div>}
-                    {data.maintenanceExtra?.completeLocation && <div><span className="text-muted-foreground">Vị trí:</span> {data.maintenanceExtra.completeLocation}</div>}
-                  </div>
-                  {data.resultRecord?.imageUrls && data.resultRecord.imageUrls.length > 0 ? (
-                    <img src={data.resultRecord.imageUrls[0]} alt="result" className="h-20 w-20 object-cover rounded border justify-self-end" />
-                  ) : null}
-                </div>
-              </Section>
-            ) : (
-              // <Section title="Kết quả thực hiện" icon={<CheckCircle className="h-5 w-5" />} accentClass="text-emerald-600">
-              //   <div className="flex items-center justify-between">
-              //     <span className="text-sm text-muted-foreground">Chưa có thông tin</span>
-              //     <Button size="sm" onClick={openResultDialog}>
-              //       Hoàn tất Ticket
-              //     </Button>
-              //   </div>
-              // </Section>
-              <div></div>
-            )}
-            </>
+                {(data.resultRecord?.time != "undefined" || data.maintenanceExtra?.completeLocation != "undefined") ? (
+                  <Section title="Kết quả thực hiện" icon={<CheckCircle className="h-5 w-5" />} accentClass="text-emerald-600">
+                    <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-sm">
+                      <div className="space-y-2">
+                        {data.resultRecord?.time && <div><span className="text-muted-foreground">Thời gian:</span> {formatDateTime(data.resultRecord.time)}</div>}
+                        {data.maintenanceExtra?.completeLocation && <div><span className="text-muted-foreground">Vị trí:</span> {data.maintenanceExtra.completeLocation}</div>}
+                      </div>
+                      {data.resultRecord?.imageUrls && data.resultRecord.imageUrls.length > 0 ? (
+                        <img src={data.resultRecord.imageUrls[0]} alt="result" className="h-20 w-20 object-cover rounded border justify-self-end" />
+                      ) : null}
+                    </div>
+                  </Section>
+                ) : (
+                  // <Section title="Kết quả thực hiện" icon={<CheckCircle className="h-5 w-5" />} accentClass="text-emerald-600">
+                  //   <div className="flex items-center justify-between">
+                  //     <span className="text-sm text-muted-foreground">Chưa có thông tin</span>
+                  //     <Button size="sm" onClick={openResultDialog}>
+                  //       Hoàn tất Ticket
+                  //     </Button>
+                  //   </div>
+                  // </Section>
+                  <div></div>
+                )}
+              </>
             )}
 
             {/* {data.notes && (
@@ -839,11 +839,11 @@ const MaintenanceDetail = () => {
                   "first-response-image": imageBase64,
                 });
                 if (res.success) {
-                  sonnerToast.success("Đã cập nhật First Response", { action: { label: "Đóng", onClick: () => {} } });
+                  sonnerToast.success("Đã cập nhật First Response", { action: { label: "Đóng", onClick: () => { } } });
                   setOpenFirst(false);
                   qc.invalidateQueries({ queryKey: ["ticket-detail", "maintenance", id] });
                 } else {
-                  sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => {} } });
+                  sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => { } } });
                 }
               }}>Lưu</Button>
             </div>
@@ -876,11 +876,11 @@ const MaintenanceDetail = () => {
                   "response-content": supplierNote || undefined,
                 });
                 if (res.success) {
-                  sonnerToast.success("Đã cập nhật Supplier Instruction", { action: { label: "Đóng", onClick: () => {} } });
+                  sonnerToast.success("Đã cập nhật Supplier Instruction", { action: { label: "Đóng", onClick: () => { } } });
                   setOpenSupplier(false);
                   qc.invalidateQueries({ queryKey: ["ticket-detail", "maintenance", id] });
                 } else {
-                  sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => {} } });
+                  sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => { } } });
                 }
               }}>Lưu</Button>
             </div>
@@ -927,11 +927,11 @@ const MaintenanceDetail = () => {
                     "start-location": startLocation || undefined,
                   });
                   if (res.success) {
-                    sonnerToast.success("Đã ghi nhận bắt đầu thực hiện", { action: { label: "Đóng", onClick: () => {} } });
+                    sonnerToast.success("Đã ghi nhận bắt đầu thực hiện", { action: { label: "Đóng", onClick: () => { } } });
                     setOpenStart(false);
                     qc.invalidateQueries({ queryKey: ["ticket-detail", "maintenance", id] });
                   } else {
-                    sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => {} } });
+                    sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => { } } });
                   }
                 }}
                 disabled={startImages.length === 0}
@@ -1032,11 +1032,11 @@ const MaintenanceDetail = () => {
                   "result-location": resultLocation || undefined,
                 });
                 if (res.success) {
-                  sonnerToast.success("Đã ghi nhận kết quả", { action: { label: "Đóng", onClick: () => {} } });
+                  sonnerToast.success("Đã ghi nhận kết quả", { action: { label: "Đóng", onClick: () => { } } });
                   setOpenResult(false);
                   qc.invalidateQueries({ queryKey: ["ticket-detail", "maintenance", id] });
                 } else {
-                  sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => {} } });
+                  sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => { } } });
                 }
               }}>
                 <CheckCircle className="mr-2" /> Lưu kết quả
@@ -1086,11 +1086,11 @@ const MaintenanceDetail = () => {
                 Ticket #{id} đã chuyển sang trạng thái đang thực hiện.
               </p>
             </div>
-            <Button 
+            <Button
               onClick={() => {
                 setShowSuccessModal(false);
                 navigate("/maintenance");
-              }} 
+              }}
               className="w-full"
             >
               Đóng

@@ -71,31 +71,31 @@ const TicketList = ({ type, status, searchQuery }: Props) => {
     },
   });
   const allTickets = ((data?.pages || []).flatMap((p) => p?.items || []) || []) as Ticket[];
-  
+
   // Filter tickets based on searchQuery
   // For maintenance tickets: search by device serial, device model, or customer name
   // For sales tickets: search by activity name (title) or description
   // For delivery tickets: search by customer name
   const list = searchQuery?.trim()
     ? allTickets.filter((ticket) => {
-        const query = searchQuery.toLowerCase().trim();
-        if (type === "maintenance") {
-          // For maintenance tickets, search in device serial, device model, and customer name
-          const matchesSerial = (ticket as any).deviceSerial?.toLowerCase().includes(query);
-          const matchesModel = (ticket as any).deviceModel?.toLowerCase().includes(query);
-          const matchesCustomer = ticket.customer?.toLowerCase().includes(query);
-          const matchesTitle = ticket.title?.toLowerCase().includes(query);
-          return matchesSerial || matchesModel || matchesCustomer || matchesTitle;
-        } else if (type === "sales") {
-          // For sales tickets, search in activity name (title) and description
-          const matchesTitle = ticket.title?.toLowerCase().includes(query);
-          const matchesDescription = ticket.description?.toLowerCase().includes(query);
-          return matchesTitle || matchesDescription;
-        } else {
-          // For delivery tickets, search by customer name
-          return ticket.customer?.toLowerCase().includes(query);
-        }
-      })
+      const query = searchQuery.toLowerCase().trim();
+      if (type === "maintenance") {
+        // For maintenance tickets, search in device serial, device model, and customer name
+        const matchesSerial = (ticket as any).deviceSerial?.toLowerCase().includes(query);
+        const matchesModel = (ticket as any).deviceModel?.toLowerCase().includes(query);
+        const matchesCustomer = ticket.customer?.toLowerCase().includes(query);
+        const matchesTitle = ticket.title?.toLowerCase().includes(query);
+        return matchesSerial || matchesModel || matchesCustomer || matchesTitle;
+      } else if (type === "sales") {
+        // For sales tickets, search in activity name (title) and description
+        const matchesTitle = ticket.title?.toLowerCase().includes(query);
+        const matchesDescription = ticket.description?.toLowerCase().includes(query);
+        return matchesTitle || matchesDescription;
+      } else {
+        // For delivery tickets, search by customer name
+        return ticket.customer?.toLowerCase().includes(query);
+      }
+    })
     : allTickets;
   return (
     <div className="space-y-4">
@@ -111,12 +111,12 @@ const TicketList = ({ type, status, searchQuery }: Props) => {
       )}
       {!isLoading && !isError && list.length === 0 && (
         <div className="text-sm text-muted-foreground">
-          {searchQuery?.trim() 
+          {searchQuery?.trim()
             ? type === "maintenance"
               ? `Không tìm thấy ticket nào với serial/model/dòng sản phẩm "${searchQuery}"`
               : type === "sales"
-              ? `Không tìm thấy ticket nào với tên hoạt động "${searchQuery}"`
-              : `Không tìm thấy ticket nào với tên khách hàng "${searchQuery}"`
+                ? `Không tìm thấy ticket nào với tên hoạt động "${searchQuery}"`
+                : `Không tìm thấy ticket nào với tên khách hàng "${searchQuery}"`
             : "Không có ticket phù hợp."}
         </div>
       )}
@@ -141,11 +141,11 @@ const TicketList = ({ type, status, searchQuery }: Props) => {
               </span>
             </div>
           </div>
-          
+
           <h4 className="font-semibold text-foreground mb-2">
             {ticket.title}
           </h4>
-          
+
           <div className="flex flex-col space-y-2 text-sm text-muted-foreground">
             {ticket.type === 'sales' ? (
               <div className="flex items-start space-x-1">
@@ -161,7 +161,7 @@ const TicketList = ({ type, status, searchQuery }: Props) => {
                 <span className="truncate">{ticket.address}</span>
               </div>
             )}
-            {Array.isArray((ticket as any).products) && (ticket as any).products.length > 0 && (
+            {/* {Array.isArray((ticket as any).products) && (ticket as any).products.length > 0 && (
               <div className="flex items-start space-x-1">
                 <Package className="h-4 w-4 mt-0.5" />
                 <div className="flex-1">
@@ -173,13 +173,13 @@ const TicketList = ({ type, status, searchQuery }: Props) => {
                   )}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
-          
+
           <div className="flex items-center justify-between mt-3">
             <div className="flex items-center space-x-1 text-sm">
               <Clock className={cn("h-4 w-4", ticket.type === 'maintenance' ? "text-primary" : "text-orange-500")} />
-              <span className={cn("font-medium", ticket.type === 'maintenance' ? "text-primary" : "text-orange-600") }>
+              <span className={cn("font-medium", ticket.type === 'maintenance' ? "text-primary" : "text-orange-600")}>
                 {ticket.type === 'maintenance' ? 'Yêu cầu lúc:' : 'Hạn:'} {formatDateTime(ticket.deadline)}
               </span>
             </div>
