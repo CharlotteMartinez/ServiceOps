@@ -2,7 +2,7 @@ import Header from "@/components/Layout/Header";
 import DetailTopNav from "@/components/Layout/DetailTopNav";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { TicketDetail as TicketDetailType, fetchDeliveryInstallTicketDetail, acceptDeliveryInstallTicket, completeDeliveryInstallTicket } from "@/lib/api";
+import { TicketDetail as TicketDetailType, fetchDeliveryInstallTicketDetail, acceptDeliveryInstallTicket, completeDeliveryInstallTicket, createResidualDeliveryTicket } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -343,10 +343,42 @@ const DeliveryInstallDetail = () => {
 
       if (res.success) {
         console.log('[DeliveryInstall] Success! Refreshing data...');
+
+        // Logic tạo ticket mới cho hàng hóa / thiết bị chưa được tick
+        const allProductCodes = data?.orderInfo?.secretCodes?.map((it: any) => it.code) || [];
+        const allSerials = data?.deviceInfo?.map((d: any) => d.serial || "").filter(Boolean) || [];
+        const unfinishedCodes = allProductCodes.filter((c: string) => !selectedGoods.includes(c));
+        const unfinishedSerials = allSerials.filter((s: string) => !selectedDevices.includes(s));
+
+        // Toast 1: kết quả hoàn tất chính
         notify.success("Hoàn tất thành công", { description: `Ticket ${id} đã được cập nhật kết quả.` });
         setShowReportForm(false);
         resetForm();
         await refetch();
+
+        // Toast 2: kết quả tạo ticket mới (delay để stack lần lượt)
+        if ((unfinishedCodes.length > 0 || unfinishedSerials.length > 0) && data) {
+          try {
+            console.log('[DeliveryInstall] Creating residual ticket for unfinished items:', { unfinishedCodes, unfinishedSerials });
+            const residualRes = await createResidualDeliveryTicket({
+              originalTicket: data,
+              unfinishedProductCodes: unfinishedCodes,
+              unfinishedSerials,
+            });
+            setTimeout(() => {
+              if (residualRes.success) {
+                notify.success("Đã tạo ticket mới cho những item chưa hoàn thành.");
+              } else {
+                console.warn('[DeliveryInstall] Residual ticket creation failed:', residualRes);
+                notify.error("Lỗi khi tạo ticket mới, vui lòng kiểm tra lại.");
+              }
+            }, 400);
+          } catch (residualErr) {
+            console.error('[DeliveryInstall] Error creating residual ticket:', residualErr);
+            setTimeout(() => notify.error("Lỗi khi tạo ticket mới, vui lòng kiểm tra lại."), 400);
+          }
+        }
+
       } else {
         console.error('[DeliveryInstall] API returned error:', res);
         notify.error("Hoàn tất thất bại", { description: res.message || "Không thể gửi kết quả." });

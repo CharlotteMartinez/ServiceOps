@@ -230,7 +230,7 @@ export interface TicketDetail extends TicketSummary {
     orderInfo?: {
         orderCode?: string;
         itemsCount?: number;
-        secretCodes?: Array<{ code: string; name?: string; quantity?: number }>;
+        secretCodes?: Array<{ code: string; productId?: string; name?: string; quantity?: number }>;
         // Extended fields for delivery/installation order detail
         customerName?: string;
         totalAmount?: number;
@@ -244,7 +244,7 @@ export interface TicketDetail extends TicketSummary {
         status?: string;
     };
     goodsInfo?: Array<{ sku?: string; name: string; quantity: number }>;
-    deviceInfo?: Array<{ model?: string; serial?: string; quantity?: number }>;
+    deviceInfo?: Array<{ model?: string; serial?: string; deviceCode?: string; deviceId?: string; quantity?: number }>;
     notes?: string;
     // Maintenance flow sections (optional)
     firstResponse?: { time?: string; note?: string; imageUrls?: string[] };
@@ -1078,6 +1078,7 @@ type ExternalDeliveryDetail = {
     deadline?: string;
     created_time?: string;
     orderDetail?: {
+        order_id?: string;
         orderCode?: string;
         customerName?: string;
         totalAmount?: number;
@@ -1091,6 +1092,7 @@ type ExternalDeliveryDetail = {
         status?: string;
     };
     devices?: Array<{
+        device_id?: string;
         deviceCode?: string;
         serialNumber?: string;
         name?: string;
@@ -1101,6 +1103,7 @@ type ExternalDeliveryDetail = {
         maintenancePeriod?: string;
     }>;
     products?: Array<{
+        product_id?: string;
         sku?: string;
         name?: string;
         description?: string;
@@ -1154,6 +1157,7 @@ export async function fetchDeliveryInstallTicketDetail(ticketId: string): Promis
     }
 
     const d = detailRaw || ({} as ExternalDeliveryDetail);
+    console.log('[fetchDeliveryInstallTicketDetail] detailRaw (raw from API):', JSON.stringify(d, null, 2));
     console.log('[fetchDeliveryInstallTicketDetail] detailRaw fields:', {
         has_products: Array.isArray(d.products),
         products_count: Array.isArray(d.products) ? d.products.length : 0,
@@ -1178,14 +1182,14 @@ export async function fetchDeliveryInstallTicketDetail(ticketId: string): Promis
         : Array.isArray(d.products)
             ? d.products
                 .filter((p) => p && (p.name || p.sku))
-                .map((p) => ({ sku: p.sku, name: p.name || "Hàng hóa", quantity: Number(p.quantity || 1) }))
+                .map((p) => ({ sku: p.sku, productId: p.product_id, name: p.name || "Hàng hóa", quantity: Number(p.quantity || 1) }))
             : [];
 
     console.log('[fetchDeliveryInstallTicketDetail] goodsInfo result:', { hasNewFormat, count: goodsInfo.length, goodsInfo });
     const deviceInfo = Array.isArray(d.devices)
         ? d.devices
             .filter((dv) => dv && (dv.name || dv.deviceCode || dv.serialNumber))
-            .map((dv) => ({ model: dv.name || dv.deviceCode || "Thiết bị", serial: dv.serialNumber || undefined, quantity: 1 }))
+            .map((dv) => ({ model: dv.name || dv.deviceCode || "Thiết bị", serial: dv.serialNumber || undefined, deviceCode: dv.deviceCode || undefined, deviceId: dv.device_id || undefined, quantity: 1 }))
         : [];
 
     const titleBase = goodsInfo.map((p) => p?.name).filter(Boolean).join(", ") || d.customer_name || "Ticket giao hàng / lắp đặt";
@@ -1209,7 +1213,7 @@ export async function fetchDeliveryInstallTicketDetail(ticketId: string): Promis
         orderInfo: {
             orderCode: d.orderDetail?.orderCode || d.order_id,
             itemsCount: goodsInfo.length || undefined,
-            secretCodes: goodsInfo.map((p) => ({ code: p.sku || "", name: p.name || "Hàng hóa", quantity: Number(p.quantity || 1) })),
+            secretCodes: goodsInfo.map((p) => ({ code: p.sku || "", productId: (p as any).productId, name: p.name || "Hàng hóa", quantity: Number(p.quantity || 1) })),
             customerName: d.orderDetail?.customerName,
             totalAmount: d.orderDetail?.totalAmount,
             orderDate: d.orderDetail?.orderDate,
@@ -1288,6 +1292,65 @@ export async function completeDeliveryInstallTicket(input: {
         body,
     });
     return res as any;
+}
+
+// Tạo ticket mới cho hàng hóa / thiết bị chưa được xử lý trong ticket giao hàng gốc
+export async function createResidualDeliveryTicket(input: {
+    originalTicket: TicketDetail;
+    unfinishedProductCodes: string[];
+    unfinishedSerials: string[];
+}): Promise<ApiResponse<{ ok: boolean }>> {
+    const { originalTicket: t, unfinishedProductCodes, unfinishedSerials } = input;
+
+    // Lọc chỉ giữ hàng hóa chưa được tick
+    const residualProducts = (t.orderInfo?.secretCodes || []).filter((p) =>
+        unfinishedProductCodes.includes(p.code)
+    );
+
+    // Lọc chỉ giữ thiết bị chưa được tick
+    const residualDevices = (t.deviceInfo || []).filter((d) =>
+        unfinishedSerials.includes(d.serial || "")
+    );
+
+    const user = getAuthUser() || {} as any;
+    const staffCode = user["staff-code"] || user.staffCode || user.code || undefined;
+
+    const body: Record<string, any> = {
+        "ticket-id": t.id,
+        "order-id": t.projectCode,
+        "order-code": t.orderInfo?.orderCode,
+        "customer-name": t.customerInfo?.name,
+        "phone-number": t.customerInfo?.contactPhone,
+        "address": t.customerInfo?.address,
+        "deadline": t.deadline,
+        "description": t.notes,
+        "staff-code": staffCode,
+        "products": residualProducts.map((p) => ({
+            "product-id": p.productId,
+            code: p.code,
+            name: p.name,
+            quantity: p.quantity ?? 1,
+        })),
+        "devices": residualDevices.map((d) => ({
+            "device-id": d.deviceId,
+            "device-code": d.deviceCode,
+            serial: d.serial,
+            model: d.model,
+        })),
+    };
+
+    console.log("[createResidualDeliveryTicket] Posting residual ticket:", body);
+
+    const res = await apiRequest<{ records?: any[]; ok?: boolean }>({
+        method: "POST",
+        path: "https://automation.osi.vn/webhook/create-delivery",
+        body,
+    });
+
+    // Thành công khi response có records array (Airtable response)
+    const payload = res.data as any;
+    const hasRecords = Array.isArray(payload?.records) && payload.records.length > 0;
+    return { ...res, success: hasRecords || res.success } as any;
 }
 
 // ---------------------- Maintenance / Repair (n8n) ----------------------
