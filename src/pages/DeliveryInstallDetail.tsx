@@ -38,6 +38,7 @@ const DeliveryInstallDetail = () => {
   const [note, setNote] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showFinishedImage, setShowFinishedImage] = useState(false);
   const [finishedImageUrl, setFinishedImageUrl] = useState<string | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -283,13 +284,15 @@ const DeliveryInstallDetail = () => {
   // Xử lý hoàn tất báo cáo
   const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id) return;
+    if (!id || isSubmitting) return;
 
     // Validate: Phải có ít nhất 1 ảnh
     if (images.length === 0) {
       notify.error("Vui lòng chụp ít nhất 1 ảnh kết quả");
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       // Convert images to base64
@@ -402,6 +405,8 @@ const DeliveryInstallDetail = () => {
       }
 
       notify.error("Hoàn tất thất bại", { description: errorMessage });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -448,7 +453,7 @@ const DeliveryInstallDetail = () => {
                 </div>
               </div>
 
-              {(data.activityResult?.time || (data.activityResult?.imageUrls && data.activityResult.imageUrls.length > 0) || data.activityResult?.note) && (
+              {isCompleted && (
                 <div className="grid grid-cols-1 gap-4">
                   <div className="flex gap-4">
                     {data.activityResult?.time && (
@@ -472,11 +477,11 @@ const DeliveryInstallDetail = () => {
                     )}
                   </div>
 
-                  {data.activityResult?.imageUrls && data.activityResult.imageUrls[0] && (
-                    <div className="rounded-xl border bg-white/70 p-3 backdrop-blur">
-                      <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium">
-                        <ImageIcon className="h-4 w-4" /> Hình ảnh
-                      </div>
+                  <div className="rounded-xl border bg-white/70 p-3 backdrop-blur">
+                    <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium">
+                      <ImageIcon className="h-4 w-4" /> Hình ảnh
+                    </div>
+                    {data.activityResult?.imageUrls?.[0] && data.activityResult.imageUrls[0] !== "undefined" ? (
                       <button
                         type="button"
                         onClick={() => { setFinishedImageUrl(data.activityResult?.imageUrls?.[0]); setShowFinishedImage(true); }}
@@ -485,8 +490,12 @@ const DeliveryInstallDetail = () => {
                       >
                         <img src={data.activityResult.imageUrls[0]} alt="Hình ảnh hoàn thành" className="h-28 w-full object-cover" />
                       </button>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="mt-2 flex items-center justify-center h-16 text-sm text-muted-foreground italic">
+                        Không có hình ảnh
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -641,7 +650,17 @@ const DeliveryInstallDetail = () => {
         {showReportForm && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
             <form className="bg-background rounded-xl shadow-lg p-4 sm:p-6 w-full max-w-md md:max-w-lg space-y-4 relative max-h-[85vh] overflow-y-auto" onSubmit={handleSubmitReport}>
-              <button type="button" aria-label="Đóng" className="absolute top-3 right-3 text-muted-foreground hover:text-foreground" onClick={() => {
+              {/* Loading overlay – blocks all interaction during API call */}
+              {isSubmitting && (
+                <div className="absolute inset-0 rounded-xl bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10">
+                  <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  <span className="text-sm font-medium text-foreground">Đang gửi kết quả...</span>
+                </div>
+              )}
+              <button type="button" aria-label="Đóng" className="absolute top-3 right-3 text-muted-foreground hover:text-foreground disabled:opacity-40" disabled={isSubmitting} onClick={() => {
                 setShowReportForm(false);
                 resetForm();
               }}>
@@ -725,9 +744,18 @@ const DeliveryInstallDetail = () => {
                 <label className="block text-sm font-medium mb-1">Ghi chú</label>
                 <textarea className="w-full border rounded p-2" rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder="Nhập ghi chú cho kỹ thuật viên..." />
               </div>
-              <Button type="submit" size="lg" className="w-full">
-                <CheckCircle />
-                Hoàn tất
+              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    </svg>
+                    Đang gửi...
+                  </>
+                ) : (
+                  <><CheckCircle /> Hoàn tất</>
+                )}
               </Button>
             </form>
           </div>

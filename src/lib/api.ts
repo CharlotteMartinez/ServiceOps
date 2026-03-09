@@ -951,6 +951,7 @@ type ExternalDeliveryItem = {
     "deadline"?: string;
     "created_time"?: string;
     "product_list"?: string; // New field from API to be used as title
+    "finished_time"?: string; // Time when the ticket was completed
 };
 
 function mapExternalStatusToAppStatus(input?: string): TicketStatus {
@@ -1049,6 +1050,7 @@ export async function fetchDeliveryInstallTickets(filterStatus?: TicketStatus): 
             status: mapExternalStatusToAppStatus(it.status),
             statusDisplayLabel: mapExternalStatusToDisplay(it.status),
             products,
+            finishedTime: it.finished_time,
         };
         console.log('[fetchDeliveryInstallTickets] Mapped ticket:', it.ticket_id, '→', mapped);
         return mapped;
@@ -1062,6 +1064,16 @@ export async function fetchDeliveryInstallTickets(filterStatus?: TicketStatus): 
         console.warn('[fetchDeliveryInstallTickets] No items match filter, showing all');
         filtered = items;
     }
+
+    // Sort completed tickets by finished_time descending (newest first)
+    if (filterStatus === "completed") {
+        filtered = [...filtered].sort((a, b) => {
+            const ta = (a as any).finishedTime ? new Date((a as any).finishedTime).getTime() : 0;
+            const tb = (b as any).finishedTime ? new Date((b as any).finishedTime).getTime() : 0;
+            return tb - ta;
+        });
+    }
+
     return { success: true, status: 200, data: { items: filtered, total: filtered.length } };
 }
 

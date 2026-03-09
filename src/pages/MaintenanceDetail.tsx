@@ -707,7 +707,11 @@ const MaintenanceDetail = () => {
                       </div>
                       {hasStartImage ? (
                         <img src={validStartImage as string} alt="start" className="h-20 w-20 object-cover rounded border justify-self-end" />
-                      ) : null}
+                      ) : (
+                        <div className="italic flex items-center justify-center h-20 w-20 rounded border bg-muted/40 text-xs text-muted-foreground text-center p-1 justify-self-end">
+                          Không có hình ảnh
+                        </div>
+                      )}
                     </div>
                   </Section>
                 ) : (
@@ -728,7 +732,17 @@ const MaintenanceDetail = () => {
                         {data.maintenanceExtra?.completeLocation && <div><span className="text-muted-foreground">Vị trí:</span> {data.maintenanceExtra.completeLocation}</div>}
                       </div>
                       {data.resultRecord?.imageUrls && data.resultRecord.imageUrls.length > 0 ? (
-                        <img src={data.resultRecord.imageUrls[0]} alt="result" className="h-20 w-20 object-cover rounded border justify-self-end" />
+                        (() => {
+                          const url = data.resultRecord.imageUrls[0];
+                          const isValid = url && url !== "undefined" && url !== "null" && (url.startsWith("http") || url.startsWith("data:"));
+                          return isValid ? (
+                            <img src={url} alt="result" className="h-20 w-20 object-cover rounded border justify-self-end" />
+                          ) : (
+                            <div className="italic flex items-center justify-center h-20 w-20 rounded border bg-muted/40 text-xs text-muted-foreground text-center p-1 justify-self-end">
+                              Không có hình ảnh
+                            </div>
+                          );
+                        })()
                       ) : null}
                     </div>
                   </Section>

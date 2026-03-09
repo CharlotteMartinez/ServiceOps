@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Header from "@/components/Layout/Header";
 import BottomNav from "@/components/Layout/BottomNav";
 import TicketList from "@/components/Dashboard/TicketList";
@@ -6,65 +6,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
-import { getTickets } from "@/lib/api";
 
 const DeliveryInstall = () => {
-  const [ticketCounts, setTicketCounts] = useState({
-    assigned: 0,
-    "in-progress": 0,
-    completed: 0,
-  });
   const [completedSearchQuery, setCompletedSearchQuery] = useState("");
-
-  useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const [assignedRes, inProgressRes, completedRes] = await Promise.all([
-          getTickets({ type: "delivery", status: "assigned", pageSize: 1 }),
-          getTickets({ type: "delivery", status: "in-progress", pageSize: 1 }),
-          getTickets({ type: "delivery", status: "completed", pageSize: 1 }),
-        ]);
-
-        setTicketCounts({
-          assigned: assignedRes.success ? assignedRes.data?.total || 0 : 0,
-          "in-progress": inProgressRes.success ? inProgressRes.data?.total || 0 : 0,
-          completed: completedRes.success ? completedRes.data?.total || 0 : 0,
-        });
-      } catch (error) {
-        console.error("Error fetching ticket counts:", error);
-      }
-    };
-
-    fetchCounts();
-  }, []);
-
-  const getCountBadgeColor = (status: string) => {
-    switch (status) {
-      case "assigned":
-        return "bg-orange-500 text-white";
-      case "in-progress":
-        return "bg-blue-500 text-white";
-      case "completed":
-        return "bg-green-500 text-white";
-      default:
-        return "bg-gray-500 text-white";
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
       <Header pageTitle="Giao hàng & Lắp đặt" />
-      
+
       <main className="container mx-auto px-4 py-6 pb-20 md:pb-6">
         <Tabs defaultValue="assigned" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="assigned" className="relative">
               Tiếp nhận
-              {ticketCounts.assigned > 0 && (
-                <span className={`absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs flex items-center justify-center font-medium ${getCountBadgeColor("assigned")}`}>
-                  {ticketCounts.assigned}
-                </span>
-              )}
             </TabsTrigger>
             <TabsTrigger value="in-progress" className="relative">
               Đang thực hiện
