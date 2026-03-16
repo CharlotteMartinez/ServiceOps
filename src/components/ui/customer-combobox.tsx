@@ -36,6 +36,8 @@ export function CustomerCombobox({
   const [search, setSearch] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [dynamicCustomers, setDynamicCustomers] = React.useState<Customer[]>(initialCustomers);
+  // Cache khách hàng đã chọn từ kết quả tìm kiếm để giữ hiển thị tên sau khi search bị reset
+  const [selectedCustomerCache, setSelectedCustomerCache] = React.useState<Customer | null>(null);
 
   // Sync initial customers when they change
   React.useEffect(() => {
@@ -43,12 +45,25 @@ export function CustomerCombobox({
   }, [initialCustomers]);
 
   const selectedCustomer = React.useMemo(() => {
-    return dynamicCustomers.find((c) => c["record-id"] === value) || null;
-  }, [dynamicCustomers, value]);
+    // Tìm trong danh sách hiện tại trước
+    const found = dynamicCustomers.find((c) => c["record-id"] === value);
+    if (found) return found;
+    // Fallback: dùng cache nếu record-id khớp (khi customer từ search không còn trong list)
+    if (selectedCustomerCache && selectedCustomerCache["record-id"] === value) return selectedCustomerCache;
+    return null;
+  }, [dynamicCustomers, value, selectedCustomerCache]);
 
   // Debounced search effect
   React.useEffect(() => {
     if (!search.trim()) {
+      // Khi xoá search, giữ lại khách hàng đã chọn (nếu có) bên cạnh danh sách gốc
+      if (selectedCustomerCache && value === selectedCustomerCache["record-id"]) {
+        const alreadyInList = initialCustomers.some((c) => c["record-id"] === selectedCustomerCache["record-id"]);
+        if (!alreadyInList) {
+          setDynamicCustomers([selectedCustomerCache, ...initialCustomers]);
+          return;
+        }
+      }
       setDynamicCustomers(initialCustomers);
       return;
     }
@@ -58,7 +73,6 @@ export function CustomerCombobox({
       try {
         const res = await searchCustomers(search);
         if (res.success && res.data) {
-          // Merge results to ensure selected item stays if possible, or just replace
           setDynamicCustomers(res.data);
         }
       } catch (error) {
@@ -69,7 +83,7 @@ export function CustomerCombobox({
     }, 1000); // 1000ms debounce (1s delay)
 
     return () => clearTimeout(timer);
-  }, [search, initialCustomers]);
+  }, [search, initialCustomers, selectedCustomerCache, value]);
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={true}>
@@ -123,6 +137,12 @@ export function CustomerCombobox({
                     value={customer["record-id"]}
                     onSelect={() => {
                       const isSelected = value === customer["record-id"];
+                      if (!isSelected) {
+                        // Cache khách hàng được chọn để hiển thị tên kể cả sau khi search reset
+                        setSelectedCustomerCache(customer);
+                      } else {
+                        setSelectedCustomerCache(null);
+                      }
                       onSelect?.(isSelected ? null : customer);
                       setOpen(false);
                       setSearch("");
