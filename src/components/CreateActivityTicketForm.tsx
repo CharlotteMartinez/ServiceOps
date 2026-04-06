@@ -150,7 +150,7 @@ const CreateActivityTicketForm: React.FC<CreateActivityTicketFormProps> = ({ ope
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Tạo Ticket Hoạt động & Hỗ trợ</DialogTitle>
         </DialogHeader>
