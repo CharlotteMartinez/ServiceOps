@@ -92,15 +92,15 @@ export function CustomerCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          className="w-full justify-between h-auto min-h-10 py-2"
           disabled={disabled}
         >
           {selectedCustomer ? (
-            <div className="flex flex-col items-start flex-1 min-w-0 text-left">
-              <span className="truncate w-full text-left">
+            <div className="flex flex-col items-start flex-1 min-w-0 text-left pr-2">
+              <span className="w-full text-left whitespace-normal break-words leading-tight">
                 {selectedCustomer["customer-name"]}
               </span>
-              <span className="text-xs text-muted-foreground truncate w-full text-left">
+              <span className="text-xs text-muted-foreground w-full text-left mt-1">
                 {selectedCustomer["customer-id"]}
               </span>
             </div>
@@ -156,9 +156,9 @@ export function CustomerCombobox({
                           : "opacity-0"
                       )}
                     />
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <span className="truncate">{customer["customer-name"]}</span>
-                      <span className="text-xs text-muted-foreground truncate">
+                    <div className="flex flex-col flex-1 min-w-0 py-1">
+                      <span className="whitespace-normal break-words leading-tight text-left">{customer["customer-name"]}</span>
+                      <span className="text-xs text-muted-foreground text-left mt-0.5">
                         {customer["customer-id"]}
                       </span>
                     </div>
