@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>O.S.I Service Ops - Hệ thống quản lý kỹ thuật viên</title>
+    <meta name="description" content="Hệ thống quản lý công việc cho kỹ thuật viên O.S.I - Thiết bị khoa học Lan Oanh" />
+    <meta name="author" content="O.S.I Co., Ltd" />
+    <meta name="keywords" content="OSI, thiết bị khoa học, kỹ thuật viên, service operations, quản lý ticket" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/logo-removed-bg.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/logo-removed-bg.png" />
+    <link rel="shortcut icon" href="/logo-removed-bg.png" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/logo-removed-bg.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/logo-removed-bg.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/logo-removed-bg.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/logo-removed-bg.png" />
+
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileImage" content="/logo-removed-bg.png" />
+    <meta name="msapplication-TileColor" content="#1B4F9D" />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#1B4F9D" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:title" content="O.S.I Service Ops - Hệ thống quản lý kỹ thuật viên" />
+    <meta property="og:description" content="Hệ thống quản lý công việc cho kỹ thuật viên O.S.I - Thiết bị khoa học Lan Oanh" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/logo-removed-bg.png" />
+    <meta property="og:url" content="https://cosmic-connect-pwa.vercel.app" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="O.S.I Service Ops - Hệ thống quản lý kỹ thuật viên" />
+    <meta name="twitter:description" content="Hệ thống quản lý công việc cho kỹ thuật viên O.S.I - Thiết bị khoa học Lan Oanh" />
+    <meta name="twitter:image" content="/logo-removed-bg.png" />
+
+    <!-- OneSignal Web SDK v16 -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        try {
+          await OneSignal.init({
+            appId: "dde606c8-3a82-44a5-b55d-7cf05b8c004f",
+            allowLocalhostAsSecureOrigin: true,
+            autoRegister: false,
+            notifyButton: { enable: false }
+          });
+          console.log("✅ OneSignal initialized successfully");
+        } catch (error) {
+          console.warn("⚠️ OneSignal initialization failed:", error.message);
+          // Continue without OneSignal if initialization fails
+        }
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
