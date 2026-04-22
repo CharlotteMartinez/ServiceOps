@@ -7,33 +7,33 @@ const USE_MOCK_DATA = String(import.meta.env.VITE_USE_MOCK_DATA || "false").toLo
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export interface ApiRequestOptions {
-	method?: HttpMethod;
-	path: string;
-	body?: unknown;
-	withAuth?: boolean;
-	signal?: AbortSignal;
+    method?: HttpMethod;
+    path: string;
+    body?: unknown;
+    withAuth?: boolean;
+    signal?: AbortSignal;
 }
 
 export interface ApiResponse<T> {
-	success: boolean;
-	status: number;
-	data?: T;
-	message?: string;
+    success: boolean;
+    status: number;
+    data?: T;
+    message?: string;
 }
 
 function getBaseUrl(): string {
-	if (API_BASE_URL) return API_BASE_URL.replace(/\/$/, "");
-	// Fallback to current origin for development
-	return window.location.origin;
+    if (API_BASE_URL) return API_BASE_URL.replace(/\/$/, "");
+    // Fallback to current origin for development
+    return window.location.origin;
 }
 
 export function getAuthToken(): string | null {
-	return localStorage.getItem("auth_token");
+    return localStorage.getItem("auth_token");
 }
 
 export function setAuthToken(token: string | null) {
-	if (token) localStorage.setItem("auth_token", token);
-	else localStorage.removeItem("auth_token");
+    if (token) localStorage.setItem("auth_token", token);
+    else localStorage.removeItem("auth_token");
 }
 
 // User storage helpers
@@ -65,91 +65,91 @@ export function clearAuth() {
 }
 
 export async function apiRequest<T = unknown>(options: ApiRequestOptions): Promise<ApiResponse<T>> {
-	const { method = "POST", path, body, withAuth = false, signal } = options;
+    const { method = "POST", path, body, withAuth = false, signal } = options;
 
-	// Mock auth endpoints if enabled
-	if (USE_MOCK_AUTH && path.startsWith("/api/auth/")) {
-		// Small delay to mimic network
-		await new Promise((r) => setTimeout(r, 400));
+    // Mock auth endpoints if enabled
+    if (USE_MOCK_AUTH && path.startsWith("/api/auth/")) {
+        // Small delay to mimic network
+        await new Promise((r) => setTimeout(r, 400));
 
-		if (path === "/api/auth/login") {
-			const email = (body as any)?.email as string;
-			const password = (body as any)?.password as string;
-			if (email && password === "123456") {
-				return { success: true, status: 200, data: { token: "mock-token", user: { email } } as any };
-			}
-			return { success: false, status: 401, message: "Sai thông tin đăng nhập (mật khẩu mẫu: 123456)" };
-		}
+        if (path === "/api/auth/login") {
+            const email = (body as any)?.email as string;
+            const password = (body as any)?.password as string;
+            if (email && password === "123456") {
+                return { success: true, status: 200, data: { token: "mock-token", user: { email } } as any };
+            }
+            return { success: false, status: 401, message: "Sai thông tin đăng nhập (mật khẩu mẫu: 123456)" };
+        }
 
-		if (path === "/webhook/sent-otp") {
-			return { success: true, status: 200, data: { ok: true } as any };
-		}
+        if (path === "/webhook/sent-otp") {
+            return { success: true, status: 200, data: { ok: true } as any };
+        }
 
-		if (path === "/webhook/reset-otp") {
-			const otp = (body as any)?.otp as string;
-			if (otp && otp.length >= 4) {
-				return { success: true, status: 200, data: { ok: true } as any };
-			}
-			return { success: false, status: 400, message: "OTP không đúng" };
-		}
+        if (path === "/webhook/reset-otp") {
+            const otp = (body as any)?.otp as string;
+            if (otp && otp.length >= 4) {
+                return { success: true, status: 200, data: { ok: true } as any };
+            }
+            return { success: false, status: 400, message: "OTP không đúng" };
+        }
 
-		if (path === "/webhook/change-password") {
-			if (!withAuth || !getAuthToken()) {
-				return { success: false, status: 401, message: "Chưa đăng nhập" };
-			}
-			const oldPassword = (body as any)?.["old-password"] as string;
-			if (oldPassword === "123456") {
-				return { success: true, status: 200, data: { ok: true } as any };
-			}
-			return { success: false, status: 400, message: "Mật khẩu hiện tại không đúng (mẫu: 123456)" };
-		}
+        if (path === "/webhook/change-password") {
+            if (!withAuth || !getAuthToken()) {
+                return { success: false, status: 401, message: "Chưa đăng nhập" };
+            }
+            const oldPassword = (body as any)?.["old-password"] as string;
+            if (oldPassword === "123456") {
+                return { success: true, status: 200, data: { ok: true } as any };
+            }
+            return { success: false, status: 400, message: "Mật khẩu hiện tại không đúng (mẫu: 123456)" };
+        }
 
-		return { success: false, status: 404, message: "Mock endpoint không tồn tại" };
-	}
+        return { success: false, status: 404, message: "Mock endpoint không tồn tại" };
+    }
 
     const url = /^(https?:)?\/\//i.test(path)
         ? path
         : `${getBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
-	const headers: Record<string, string> = {
-		"Content-Type": "application/json",
-	};
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
 
-	if (withAuth) {
-		const token = getAuthToken();
-		if (token) headers["Authorization"] = `Bearer ${token}`;
-	}
+    if (withAuth) {
+        const token = getAuthToken();
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+    }
 
-	try {
-		const res = await fetch(url, {
-			method,
-			headers,
-			body: body !== undefined ? JSON.stringify(body) : undefined,
-			signal,
-		});
+    try {
+        const res = await fetch(url, {
+            method,
+            headers,
+            body: body !== undefined ? JSON.stringify(body) : undefined,
+            signal,
+        });
 
-		const isJson = res.headers.get("content-type")?.includes("application/json");
-		const data = isJson ? await res.json() : undefined;
+        const isJson = res.headers.get("content-type")?.includes("application/json");
+        const data = isJson ? await res.json() : undefined;
 
-		if (!res.ok) {
-			return {
-				success: false,
-				status: res.status,
-				message: (data as any)?.message || res.statusText || "Request failed",
-			};
-		}
+        if (!res.ok) {
+            return {
+                success: false,
+                status: res.status,
+                message: (data as any)?.message || res.statusText || "Request failed",
+            };
+        }
 
-		return {
-			success: true,
-			status: res.status,
-			data: data as T,
-		};
-	} catch (error: any) {
-		return {
-			success: false,
-			status: 0,
-			message: error?.message || "Network error",
-		};
-	}
+        return {
+            success: true,
+            status: res.status,
+            data: data as T,
+        };
+    } catch (error: any) {
+        return {
+            success: false,
+            status: 0,
+            message: error?.message || "Network error",
+        };
+    }
 }
 
 
@@ -260,7 +260,7 @@ export interface TicketDetail extends TicketSummary {
     resultRecord?: { time?: string; note?: string; imageUrls?: string[] };
     // Activity & Support specific
     activityInfo?: { subject?: string; description?: string; owner?: string; startTime?: string; endTime?: string };
-    activityResult?: { time?: string; note?: string; imageUrls?: string[] };
+    activityResult?: { time?: string; note?: string; imageUrls?: string[]; attachmentsMeta?: Array<{ url: string; name?: string; type?: string }> };
     // Maintenance extra fields (from detail API)
     maintenanceExtra?: {
         company?: string;
@@ -537,7 +537,7 @@ export async function getTickets(params: {
 }): Promise<ApiResponse<{ items: TicketSummary[]; total: number }>> {
     console.log('[getTickets] Called with params:', params);
     console.log('[getTickets] USE_MOCK_DATA:', USE_MOCK_DATA);
-    
+
     if (USE_MOCK_DATA) {
         console.log('[getTickets] Using mock data');
         // Simple filter on mock data
@@ -557,7 +557,7 @@ export async function getTickets(params: {
         console.log('[getTickets] Calling fetchMaintenanceTickets with status:', params.status);
         const result = await fetchMaintenanceTickets(params.status);
         return result;
-    } 
+    }
     // Activity & Support tickets via external webhook (n8n)
     if (params.type === "sales") {
         console.log('[getTickets] Calling fetchActivitySupportTickets with status:', params.status);
@@ -565,7 +565,7 @@ export async function getTickets(params: {
         return result;
     }
     // Fallback for other types (placeholder)
-    return apiRequest<{ items: TicketSummary[]; total: number}>({
+    return apiRequest<{ items: TicketSummary[]; total: number }>({
         method: "GET",
         path: `/api/tickets?type=${params.type || ""}&status=${params.status || ""}&assigneeId=${params.assigneeId || ""}&page=${params.page || 1}&pageSize=${params.pageSize || 20}`,
         withAuth: true,
@@ -766,7 +766,7 @@ export async function getUnassignedTickets(): Promise<ApiResponse<{ items: Ticke
             },
             {
                 id: "MT20250926-175521",
-                type: "maintenance", 
+                type: "maintenance",
                 title: "Võ Thị Hoa",
                 customer: "Võ Thị Hoa",
                 address: "Khu vực máy bơm, Nhà máy DEF, KCN Tân Thuận",
@@ -796,92 +796,92 @@ export async function getUnassignedTickets(): Promise<ApiResponse<{ items: Ticke
     let items: TicketSummary[] = [];
 
     // Handle different response structures including nested arrays
-	if (import.meta.env.DEV) {
-		console.debug('[getUnassignedTickets] raw payload:', payload);
-	}
+    if (import.meta.env.DEV) {
+        console.debug('[getUnassignedTickets] raw payload:', payload);
+    }
 
-	if (Array.isArray(payload)) {
+    if (Array.isArray(payload)) {
         // Flatten nested arrays and map each item
-		const flattenItems = (node: any): any[] => {
-			if (Array.isArray(node)) {
-				return node.flatMap((child) => flattenItems(child));
-			}
-			if (node && typeof node === 'object') {
-				const keys = Object.keys(node);
-				// Handle objects that wrap an array under "" or a single key
-				if (keys.length === 1 && Array.isArray((node as any)[keys[0]])) {
-					return flattenItems((node as any)[keys[0]]);
-				}
-				return [node];
-			}
-			return [];
-		};
+        const flattenItems = (node: any): any[] => {
+            if (Array.isArray(node)) {
+                return node.flatMap((child) => flattenItems(child));
+            }
+            if (node && typeof node === 'object') {
+                const keys = Object.keys(node);
+                // Handle objects that wrap an array under "" or a single key
+                if (keys.length === 1 && Array.isArray((node as any)[keys[0]])) {
+                    return flattenItems((node as any)[keys[0]]);
+                }
+                return [node];
+            }
+            return [];
+        };
 
-		const flatPayload = flattenItems(payload);
-		if (import.meta.env.DEV) {
-			console.debug('[getUnassignedTickets] flat payload (array) length:', flatPayload.length);
-			console.debug('[getUnassignedTickets] sample item:', flatPayload[0]);
-		}
-        
-		items = flatPayload.map((item: any) => {
-			const id = item["ticket-id"] || item.ticket_id || item.ticketId || item.id;
-			const rawType = String(item?.type || '').trim();
-			const type: TicketType = rawType === "Giao hàng và Lắp đặt" ? "delivery" : rawType === "Bảo trì / Sửa chữa" ? "maintenance" : "sales";
-			if (import.meta.env.DEV && (!id || !type)) {
-				console.debug('[getUnassignedTickets] missing id/type item:', { id, rawType, item });
-			}
-			return {
-				id: id || `TK-${Date.now()}`,
-				type,
-				subTypeLabel: rawType || undefined,
-				title: item.customer || "Khách hàng",
-				customer: item.customer || "Khách hàng",
-				address: item.address === "undefined" ? "" : (item.address || ""),
-				deadline: item.deadline || new Date().toISOString(),
-				status: "assigned" as TicketStatus,
-				statusDisplayLabel: "Chưa phân công"
-			};
-		});
+        const flatPayload = flattenItems(payload);
+        if (import.meta.env.DEV) {
+            console.debug('[getUnassignedTickets] flat payload (array) length:', flatPayload.length);
+            console.debug('[getUnassignedTickets] sample item:', flatPayload[0]);
+        }
+
+        items = flatPayload.map((item: any) => {
+            const id = item["ticket-id"] || item.ticket_id || item.ticketId || item.id;
+            const rawType = String(item?.type || '').trim();
+            const type: TicketType = rawType === "Giao hàng và Lắp đặt" ? "delivery" : rawType === "Bảo trì / Sửa chữa" ? "maintenance" : "sales";
+            if (import.meta.env.DEV && (!id || !type)) {
+                console.debug('[getUnassignedTickets] missing id/type item:', { id, rawType, item });
+            }
+            return {
+                id: id || `TK-${Date.now()}`,
+                type,
+                subTypeLabel: rawType || undefined,
+                title: item.customer || "Khách hàng",
+                customer: item.customer || "Khách hàng",
+                address: item.address === "undefined" ? "" : (item.address || ""),
+                deadline: item.deadline || new Date().toISOString(),
+                status: "assigned" as TicketStatus,
+                statusDisplayLabel: "Chưa phân công"
+            };
+        });
     } else if (payload?.data && Array.isArray(payload.data)) {
-		const flattenItems = (node: any): any[] => {
-			if (Array.isArray(node)) {
-				return node.flatMap((child) => flattenItems(child));
-			}
-			if (node && typeof node === 'object') {
-				const keys = Object.keys(node);
-				if (keys.length === 1 && Array.isArray((node as any)[keys[0]])) {
-					return flattenItems((node as any)[keys[0]]);
-				}
-				return [node];
-			}
-			return [];
-		};
+        const flattenItems = (node: any): any[] => {
+            if (Array.isArray(node)) {
+                return node.flatMap((child) => flattenItems(child));
+            }
+            if (node && typeof node === 'object') {
+                const keys = Object.keys(node);
+                if (keys.length === 1 && Array.isArray((node as any)[keys[0]])) {
+                    return flattenItems((node as any)[keys[0]]);
+                }
+                return [node];
+            }
+            return [];
+        };
 
-		const flatPayload = flattenItems(payload.data);
-		if (import.meta.env.DEV) {
-			console.debug('[getUnassignedTickets] flat payload (payload.data) length:', flatPayload.length);
-			console.debug('[getUnassignedTickets] sample item (data):', flatPayload[0]);
-		}
-        
-		items = flatPayload.map((item: any) => {
-			const id = item["ticket-id"] || item.ticket_id || item.ticketId || item.id;
-			const rawType = String(item?.type || '').trim();
-			const type: TicketType = rawType === "Giao hàng và Lắp đặt" ? "delivery" : rawType === "Bảo trì / Sửa chữa" ? "maintenance" : "sales";
-			if (import.meta.env.DEV && (!id || !type)) {
-				console.debug('[getUnassignedTickets] missing id/type item (data):', { id, rawType, item });
-			}
-			return {
-				id: id || `TK-${Date.now()}`,
-				type,
-				subTypeLabel: rawType || undefined,
-				title: item.customer || "Khách hàng",
-				customer: item.customer || "Khách hàng",
-				address: item.address === "undefined" ? "" : (item.address || ""),
-				deadline: item.deadline || new Date().toISOString(),
-				status: "assigned" as TicketStatus,
-				statusDisplayLabel: "Chưa phân công"
-			};
-		});
+        const flatPayload = flattenItems(payload.data);
+        if (import.meta.env.DEV) {
+            console.debug('[getUnassignedTickets] flat payload (payload.data) length:', flatPayload.length);
+            console.debug('[getUnassignedTickets] sample item (data):', flatPayload[0]);
+        }
+
+        items = flatPayload.map((item: any) => {
+            const id = item["ticket-id"] || item.ticket_id || item.ticketId || item.id;
+            const rawType = String(item?.type || '').trim();
+            const type: TicketType = rawType === "Giao hàng và Lắp đặt" ? "delivery" : rawType === "Bảo trì / Sửa chữa" ? "maintenance" : "sales";
+            if (import.meta.env.DEV && (!id || !type)) {
+                console.debug('[getUnassignedTickets] missing id/type item (data):', { id, rawType, item });
+            }
+            return {
+                id: id || `TK-${Date.now()}`,
+                type,
+                subTypeLabel: rawType || undefined,
+                title: item.customer || "Khách hàng",
+                customer: item.customer || "Khách hàng",
+                address: item.address === "undefined" ? "" : (item.address || ""),
+                deadline: item.deadline || new Date().toISOString(),
+                status: "assigned" as TicketStatus,
+                statusDisplayLabel: "Chưa phân công"
+            };
+        });
     }
 
     return { success: true, status: 200, data: { items, total: items.length } };
@@ -986,7 +986,7 @@ export async function fetchDeliveryInstallTickets(filterStatus?: TicketStatus): 
 
     const res = await apiRequest<{ data?: ExternalDeliveryItem[] } | ExternalDeliveryItem[]>({ method: "POST", path: "/webhook/tickets/delivery-installation", body });
     console.log('[fetchDeliveryInstallTickets] API Response:', res);
-    
+
     if (!res.success) {
         console.error('[fetchDeliveryInstallTickets] API failed:', res);
         return res as any;
@@ -995,7 +995,7 @@ export async function fetchDeliveryInstallTickets(filterStatus?: TicketStatus): 
     const payload = res.data as any;
     console.log('[fetchDeliveryInstallTickets] Payload type:', typeof payload, 'isArray:', Array.isArray(payload));
     console.log('[fetchDeliveryInstallTickets] Payload:', payload);
-    
+
     // Handle nested response: res.data might be array with [0].data containing actual items
     let itemsRaw: ExternalDeliveryItem[] = [];
     if (Array.isArray(payload)) {
@@ -1010,23 +1010,23 @@ export async function fetchDeliveryInstallTickets(filterStatus?: TicketStatus): 
     } else {
         itemsRaw = [];
     }
-    
+
     console.log('[fetchDeliveryInstallTickets] Raw items count:', itemsRaw?.length);
     console.log('[fetchDeliveryInstallTickets] Raw items:', itemsRaw);
-    
-	// Apply tab filtering based on ORIGINAL external status, per requirements
-	let itemsRawFiltered: ExternalDeliveryItem[] = itemsRaw;
-	if (filterStatus) {
-		itemsRawFiltered = itemsRaw.filter((it) => {
-			const s = (it.status || "").toLowerCase();
-			const isAssigned = s.includes("phân công") || s.includes("phan cong");
-			const isCompleted = s.includes("hoàn thành") || s.includes("hoan thanh");
-			if (filterStatus === "assigned") return isAssigned;
-			if (filterStatus === "completed") return isCompleted;
-			// in-progress => everything else (còn lại)
-			return !isAssigned && !isCompleted;
-		});
-	}
+
+    // Apply tab filtering based on ORIGINAL external status, per requirements
+    let itemsRawFiltered: ExternalDeliveryItem[] = itemsRaw;
+    if (filterStatus) {
+        itemsRawFiltered = itemsRaw.filter((it) => {
+            const s = (it.status || "").toLowerCase();
+            const isAssigned = s.includes("phân công") || s.includes("phan cong");
+            const isCompleted = s.includes("hoàn thành") || s.includes("hoan thanh");
+            if (filterStatus === "assigned") return isAssigned;
+            if (filterStatus === "completed") return isCompleted;
+            // in-progress => everything else (còn lại)
+            return !isAssigned && !isCompleted;
+        });
+    }
 
     const items: TicketSummary[] = itemsRawFiltered.map((it) => {
         const titleSource = it.customer_name || it.project_code || it.product_list || "Ticket giao hàng / lắp đặt";
@@ -1056,9 +1056,9 @@ export async function fetchDeliveryInstallTickets(filterStatus?: TicketStatus): 
         return mapped;
     });
 
-	let filtered = items; // Already filtered above using external statuses
-	console.log(`[fetchDeliveryInstallTickets] Filter: ${filterStatus}, Total: ${items.length}`);
-    
+    let filtered = items; // Already filtered above using external statuses
+    console.log(`[fetchDeliveryInstallTickets] Filter: ${filterStatus}, Total: ${items.length}`);
+
     // Fallback: if mapping misses some statuses, don't show empty list
     if (filterStatus && filtered.length === 0 && items.length > 0) {
         console.warn('[fetchDeliveryInstallTickets] No items match filter, showing all');
@@ -1243,10 +1243,10 @@ export async function fetchDeliveryInstallTicketDetail(ticketId: string): Promis
         // Map completion info (if provided by API) to a unified activityResult field
         activityResult: (d as any)?.finished_time || (d as any)?.finished_note || (d as any)?.finished_image
             ? {
-                  time: (d as any).finished_time,
-                  note: (d as any).finished_note,
-                  imageUrls: (d as any).finished_image ? [ (d as any).finished_image ] : [],
-              }
+                time: (d as any).finished_time,
+                note: (d as any).finished_note,
+                imageUrls: (d as any).finished_image ? [(d as any).finished_image] : [],
+            }
             : undefined,
     };
 
@@ -1482,29 +1482,29 @@ export async function fetchMaintenanceTicketDetail(ticketId: string): Promise<Ap
         },
         orderInfo: d.order_detail
             ? {
-                  orderCode: d.order_detail.orderCode,
-                  itemsCount: undefined,
-                  secretCodes: [],
-                  customerName: d.order_detail.customerName,
-                  totalAmount: d.order_detail.totalPrice,
-                  orderDate: d.order_detail.orderDate,
-                  description: d.order_detail.orderDescription,
-                  deliveryDate: d.order_detail.deliveryDate || d.order_detail.expectedDelivery,
-                  contactName: d.order_detail.staffName,
-                  contactPhone: d.order_detail.phone,
-                  deliveryAddress: d.order_detail.deliveryAddress,
-                  status: d.order_detail.status,
-              }
+                orderCode: d.order_detail.orderCode,
+                itemsCount: undefined,
+                secretCodes: [],
+                customerName: d.order_detail.customerName,
+                totalAmount: d.order_detail.totalPrice,
+                orderDate: d.order_detail.orderDate,
+                description: d.order_detail.orderDescription,
+                deliveryDate: d.order_detail.deliveryDate || d.order_detail.expectedDelivery,
+                contactName: d.order_detail.staffName,
+                contactPhone: d.order_detail.phone,
+                deliveryAddress: d.order_detail.deliveryAddress,
+                status: d.order_detail.status,
+            }
             : undefined,
         goodsInfo: [],
         deviceInfo: d.devices
             ? [
-                  {
-                      model: d.devices.name || d.devices.deviceCode || d.devices.device_model,
-                      serial: d.devices.serialNumber,
-                      quantity: 1,
-                  },
-              ]
+                {
+                    model: d.devices.name || d.devices.deviceCode || d.devices.device_model,
+                    serial: d.devices.serialNumber,
+                    quantity: 1,
+                },
+            ]
             : [],
         notes: d.customer_response || d.feedback_content,
         maintenanceExtra: {
@@ -1534,12 +1534,12 @@ export async function fetchMaintenanceTicketDetail(ticketId: string): Promise<Ap
         },
         supplierInstructionLogs: Array.isArray(d.supplier_instruction_logs)
             ? d.supplier_instruction_logs.map((log: any) => ({
-                  contactCode: log?.contactCode || log?.contact_code,
-                  contactTime: log?.contactTime || log?.contact_time,
-                  responseTime: log?.responseTime || log?.response_time,
-                  responseContent: log?.responseContent || log?.response_content,
-                  note: log?.note,
-              }))
+                contactCode: log?.contactCode || log?.contact_code,
+                contactTime: log?.contactTime || log?.contact_time,
+                responseTime: log?.responseTime || log?.response_time,
+                responseContent: log?.responseContent || log?.response_content,
+                note: log?.note,
+            }))
             : undefined,
         startExecution: {
             time: d.start_time,
@@ -1827,10 +1827,10 @@ export async function fetchActivitySupportTickets(filterStatus?: TicketStatus): 
 // Detail mapping for Activity & Support ticket
 type ExternalActivityDetail = {
     ticket_id: string;
-    activity_type?: string; // Demo Sản phẩm, Hoạt động khác
-    activity_name?: string; // Hỗ trợ sử dụng sản phẩm
-    type?: string; // alt key for activity_type
-    name?: string; // alt key for activity_name
+    activity_type?: string;
+    activity_name?: string;
+    type?: string;
+    name?: string;
     activity_info?: {
         type?: string;
         name?: string;
@@ -1843,6 +1843,8 @@ type ExternalActivityDetail = {
     status?: { current?: string; deadline?: string; completed_at?: string };
     result?: { summary?: string; notes?: string };
     timestamps?: { created_at?: string; updated_at?: string };
+    // Hình ảnh / Tệp đính kèm (field "attachments" do webhook trả về)
+    attachments?: Array<{ url?: string; name?: string; type?: string } | string>;
 };
 
 export async function fetchActivitySupportTicketDetail(ticketId: string): Promise<ApiResponse<TicketDetail>> {
@@ -1921,11 +1923,11 @@ export async function fetchActivitySupportTicketDetail(ticketId: string): Promis
         },
         orderInfo: orderId
             ? {
-                  orderCode: orderId,
-                  itemsCount: undefined,
-                  secretCodes: [],
-                  description: undefined,
-              }
+                orderCode: orderId,
+                itemsCount: undefined,
+                secretCodes: [],
+                description: undefined,
+            }
             : undefined,
         activityInfo: {
             subject,
@@ -1934,9 +1936,36 @@ export async function fetchActivitySupportTicketDetail(ticketId: string): Promis
             startTime: sanitize(timestampsRaw.created_at),
             endTime: completedAt,
         },
-        activityResult: resultNotes
-            ? { time: completedAt, note: resultNotes, imageUrls: [] }
-            : { time: completedAt, note: undefined, imageUrls: [] },
+        activityResult: (() => {
+            const raw = (detailSource as any).attachments;
+            const metaList: Array<{ url: string; name?: string; type?: string; token?: string }> = [];
+            if (Array.isArray(raw)) {
+                for (const item of raw) {
+                    const url = typeof item === "string" ? item : (item?.presignedUrl || item?.url || item?.signedUrl || "");
+                    if (!url || url === "undefined" || url === "null") continue;
+                    const name = typeof item === "object" ? (item?.name || "") : "";
+                    // Extract token: ưu tiên item.token, fallback extract từ URL path (/table/{TOKEN}?)
+                    const tokenFromItem = typeof item === "object" ? (item?.token || "") : "";
+                    const tokenFromUrl = url.match(/\/table\/([^?_/]+)/)?.[1] || "";
+                    const token = tokenFromItem || tokenFromUrl;
+                    // Detect type: ưu tiên mimetype/type từ Teable, fallback detect từ tên file
+                    let type = typeof item === "object" ? (item?.mimetype || item?.type || "") : "";
+                    if (!type && name) {
+                        if (/\.(jpe?g|jpg|png|gif|webp|bmp)$/i.test(name)) type = "image/jpeg";
+                        else if (/\.pdf$/i.test(name)) type = "application/pdf";
+                        else if (/\.docx?$/i.test(name)) type = "application/msword";
+                        else if (/\.xlsx?$/i.test(name)) type = "application/vnd.ms-excel";
+                    }
+                    metaList.push({ url, name, type, token });
+                }
+            }
+            return {
+                time: completedAt,
+                note: resultNotes,
+                imageUrls: metaList.map(m => m.url),
+                attachmentsMeta: metaList,
+            };
+        })(),
         notes: resultSummary,
     };
 
@@ -1948,23 +1977,23 @@ export async function fetchActivitySupportTicketDetail(ticketId: string): Promis
 export async function updateActivitySupportInfo(
     ticketId: string,
     payload: {
-        name?: string; // Tên hoạt động (thay vì subject)
+        name?: string;
         description?: string;
-        customer_name?: string; // Khách hàng (thay vì customer)
-        customer_record_id?: string; // Record ID của khách hàng
-        type?: string; // Loại hoạt động
-        deadline?: string; // Hạn hoàn thành (ISO string)
-        status?: string; // Trạng thái: "Chưa bắt đầu" hoặc "Đã hoàn thành"
-        complete_date?: string; // Ngày hoàn thành (ISO string)
-        note?: string; // Ghi chú
-        result?: string; // Kết quả - chỉ khi status = "Đã hoàn thành"
+        customer_name?: string;
+        customer_record_id?: string;
+        type?: string;
+        deadline?: string;
+        status?: string;
+        complete_date?: string;
+        note?: string;
+        result?: string;
+        attachments?: string[]; // Base64 strings cho tệp mới
+        existing_attachments?: { url: string; name?: string; type?: string }[]; // File cũ giữ lại
     },
 ): Promise<ApiResponse<{ ok: true }>> {
-    // Get current user's staff code giống form tạo
     const user = getAuthUser() || ({} as any);
     const assignee = user["staff-code"] || user.staffCode || user.code || "";
-    
-    // Body format giống y như khi tạo ticket
+
     const body: any = {
         "ticket-id": ticketId,
         name: payload.name || "",
@@ -1976,10 +2005,13 @@ export async function updateActivitySupportInfo(
         status: payload.status || "Chưa bắt đầu",
         "complete-date": payload.complete_date || "",
         note: payload.note || "",
-        result: payload.result || "", // Kết quả - chỉ khi status = "Đã hoàn thành"
+        result: payload.result || "",
         assignee: assignee,
+        ...(payload.attachments && payload.attachments.length > 0 ? { attachments: payload.attachments } : {}),
+        // Gửi danh sách file cũ muốn giữ lại để n8n xử lý merge
+        existing_attachments: payload.existing_attachments || [],
     };
-    
+
     const res = await apiRequest<{ status?: string; message?: string }>({
         method: "POST",
         path: "/webhook/ticket/activity-support-update-info",
@@ -1994,9 +2026,21 @@ export async function updateActivitySupportInfo(
 // Submit Activity & Support result note
 export async function updateActivitySupportResult(
     ticketId: string,
-    payload: { note?: string },
+    payload: {
+        note?: string;
+        attachments?: string[]; // Base64 strings cho tệp mới
+        existing_attachments?: { url: string; name?: string; type?: string }[]; // File cũ giữ lại
+    },
 ): Promise<ApiResponse<{ ok: true }>> {
-    const body: any = { "ticket-id": ticketId, data: payload };
+    const body: any = {
+        "ticket-id": ticketId,
+        data: {
+            note: payload.note,
+            attachments: payload.attachments,
+            // Gửi danh sách file cũ muốn giữ lại
+            existing_attachments: payload.existing_attachments || [],
+        },
+    };
     const res = await apiRequest<{ status?: string; message?: string }>({
         method: "POST",
         path: "/webhook/ticket/activity-support-result",
@@ -2020,18 +2064,18 @@ export interface Customer {
 
 // Fetch Customers for dropdown
 export async function fetchCustomers(): Promise<ApiResponse<Customer[]>> {
-    const res = await apiRequest<{ data?: Customer[] } | Array<{ data?: Customer[] }>>({ 
-        method: "GET", 
-        path: "/webhook/get-customer-list" 
+    const res = await apiRequest<{ data?: Customer[] } | Array<{ data?: Customer[] }>>({
+        method: "GET",
+        path: "/webhook/get-customer-list"
     });
-    
+
     console.log('[fetchCustomers] Raw Webhook Response:', res);
-    
+
     if (!res.success) return res as any;
-    
+
     const payload = res.data as any;
     let customers: Customer[] = [];
-    
+
     // Handle different response structures
     // Response format: { data: [{ "customer-id": "...", "customer-name": "...", ... }] }
     if (Array.isArray(payload)) {
@@ -2046,24 +2090,24 @@ export async function fetchCustomers(): Promise<ApiResponse<Customer[]>> {
     } else if (Array.isArray(payload)) {
         customers = payload;
     }
-    
-    
+
+
     return { success: true, status: 200, data: customers };
 }
 
 // Search Customers by name for dynamic dropdown
 export async function searchCustomers(searchText: string): Promise<ApiResponse<Customer[]>> {
     // API is GET, so send name param in query string
-    const res = await apiRequest<{ data?: Customer[] } | Array<{ data?: Customer[] }>>({ 
-        method: "GET", 
+    const res = await apiRequest<{ data?: Customer[] } | Array<{ data?: Customer[] }>>({
+        method: "GET",
         path: `https://automation.osi.vn/webhook/get-customer-by-text?name=${encodeURIComponent(searchText)}`
     });
-    
+
     if (!res.success) return res as any;
-    
+
     const payload = res.data as any;
     let customers: Customer[] = [];
-    
+
     // Handle different response structures
     if (Array.isArray(payload)) {
         const first = payload.find(Boolean);
@@ -2077,7 +2121,7 @@ export async function searchCustomers(searchText: string): Promise<ApiResponse<C
     } else if (Array.isArray(payload)) {
         customers = payload;
     }
-    
+
     return { success: true, status: 200, data: customers };
 }
 
@@ -2092,15 +2136,15 @@ export interface Device {
 
 // Fetch Devices for dropdown
 export async function fetchDevices(): Promise<ApiResponse<Device[]>> {
-    const res = await apiRequest<{ data?: Device[] } | Array<{ data?: Device[] }>>({ 
-        method: "GET", 
-        path: "/webhook/get-devices-list" 
+    const res = await apiRequest<{ data?: Device[] } | Array<{ data?: Device[] }>>({
+        method: "GET",
+        path: "/webhook/get-devices-list"
     });
     if (!res.success) return res as any;
-    
+
     const payload = res.data as any;
     let devices: Device[] = [];
-    
+
     // Handle different response structures
     // Response format: { data: [{ "serial-number": "...", "brand": "...", ... }] }
     if (Array.isArray(payload)) {
@@ -2115,21 +2159,21 @@ export async function fetchDevices(): Promise<ApiResponse<Device[]>> {
     } else if (Array.isArray(payload)) {
         devices = payload;
     }
-    
+
     return { success: true, status: 200, data: devices };
 }
 
 // Fetch Brands for dropdown
 export async function fetchBrands(): Promise<ApiResponse<string[]>> {
-    const res = await apiRequest<{ data?: Array<{ "options-name": string }> } | Array<{ data?: Array<{ "options-name": string }> }>>({ 
-        method: "GET", 
-        path: "/webhook/get-brands-list" 
+    const res = await apiRequest<{ data?: Array<{ "options-name": string }> } | Array<{ data?: Array<{ "options-name": string }> }>>({
+        method: "GET",
+        path: "/webhook/get-brands-list"
     });
     if (!res.success) return res as any;
-    
+
     const payload = res.data as any;
     let brands: string[] = [];
-    
+
     // Handle different response structures
     // Response format: [{ data: [{ "options-name": "..." }, ...] }]
     if (Array.isArray(payload)) {
@@ -2144,21 +2188,21 @@ export async function fetchBrands(): Promise<ApiResponse<string[]>> {
     } else if (Array.isArray(payload)) {
         brands = payload.map((item: { "options-name": string }) => item["options-name"]).filter(Boolean);
     }
-    
+
     return { success: true, status: 200, data: brands };
 }
 
 // Fetch Activity Types for dropdown
 export async function fetchActivityTypes(): Promise<ApiResponse<string[]>> {
-    const res = await apiRequest<{ data?: Array<{ option: string }> }>({ 
-        method: "GET", 
-        path: "/webhook/activity-types" 
+    const res = await apiRequest<{ data?: Array<{ option: string }> }>({
+        method: "GET",
+        path: "/webhook/activity-types"
     });
     if (!res.success) return res as any;
-    
+
     const payload = res.data as any;
     let options: string[] = [];
-    
+
     // Handle different response structures
     if (Array.isArray(payload)) {
         const first = payload.find(Boolean);
@@ -2168,7 +2212,7 @@ export async function fetchActivityTypes(): Promise<ApiResponse<string[]>> {
     } else if (payload?.data) {
         options = (payload.data as Array<{ option: string }>).map(item => item.option).filter(Boolean);
     }
-    
+
     return { success: true, status: 200, data: options };
 }
 
@@ -2191,7 +2235,7 @@ export async function createActivitySupportTicket(input: CreateActivitySupportTi
     // Get current user's staff code
     const user = getAuthUser() || ({} as any);
     const assignee = user["staff-code"] || user.staffCode || user.code || "";
-    
+
     const body = {
         "ticket-id": `TK${Date.now().toString().slice(-6)}`, // Generate temporary ID
         name: input.name,
@@ -2215,24 +2259,24 @@ export async function createActivitySupportTicket(input: CreateActivitySupportTi
         path: "/webhook/tickets/activity-support-create",
         body,
     });
-    
+
     if (!res.success) return res as any;
-    
+
     const status = (res.data as any)?.status;
     const isOk = typeof status === "string" ? status.toLowerCase() === "success" : true;
-    
+
     if (!isOk) {
-        return { 
-            success: false, 
-            status: res.status, 
-            message: (res.data as any)?.message || "Tạo ticket không thành công" 
+        return {
+            success: false,
+            status: res.status,
+            message: (res.data as any)?.message || "Tạo ticket không thành công"
         } as any;
     }
-    
-    return { 
-        success: true, 
-        status: res.status, 
-        data: { id: body["ticket-id"] } 
+
+    return {
+        success: true,
+        status: res.status,
+        data: { id: body["ticket-id"] }
     };
 }
 
@@ -2241,7 +2285,7 @@ export async function updateOneSignalPlayerId(playerId: string): Promise<ApiResp
     const user = getAuthUser() || {} as any;
     const email = user.email || "";
     const staffCode = user["staff-code"] || user.staffCode || user.code || "";
-    
+
     const body = {
         email,
         "staff-code": staffCode,
@@ -2253,24 +2297,24 @@ export async function updateOneSignalPlayerId(playerId: string): Promise<ApiResp
         path: "/webhook/change-onesignal-id",
         body,
     });
-    
+
     if (!res.success) return res as any;
-    
+
     const status = (res.data as any)?.status;
     const isOk = typeof status === "string" ? status.toLowerCase() === "success" : true;
-    
+
     if (!isOk) {
-        return { 
-            success: false, 
-            status: res.status, 
-            message: (res.data as any)?.message || "Cập nhật OneSignal Player ID không thành công" 
+        return {
+            success: false,
+            status: res.status,
+            message: (res.data as any)?.message || "Cập nhật OneSignal Player ID không thành công"
         } as any;
     }
-    
-    return { 
-        success: true, 
-        status: res.status, 
-        data: { ok: true } 
+
+    return {
+        success: true,
+        status: res.status,
+        data: { ok: true }
     };
 }
 
@@ -2287,12 +2331,12 @@ export async function checkDeviceBySerial(serial: string): Promise<ApiResponse<D
         path: "/webhook/check-device",
         body: { serial },
     });
-    
+
     if (!res.success) return res as any;
-    
+
     // Handle different response structures
     let deviceInfo: DeviceInfo = {};
-    
+
     if (Array.isArray(res.data)) {
         // If response is array, get the first item
         const firstItem = res.data[0];
@@ -2311,34 +2355,34 @@ export async function checkDeviceBySerial(serial: string): Promise<ApiResponse<D
             "install-date": res.data["instal-date"] || res.data["install-date"]
         };
     }
-    
+
     // Check if device info is empty (serial not found)
     if (!deviceInfo.brand && !deviceInfo.model && !deviceInfo["install-date"]) {
-        return { 
-            success: false, 
-            status: 404, 
-            message: "Serial không tồn tại" 
+        return {
+            success: false,
+            status: 404,
+            message: "Serial không tồn tại"
         } as any;
     }
-    
-    return { 
-        success: true, 
-        status: res.status, 
-        data: deviceInfo 
+
+    return {
+        success: true,
+        status: res.status,
+        data: deviceInfo
     };
 }
 
 // Fetch maintenance ticket categories
 export async function fetchMaintenanceTicketCategories(): Promise<ApiResponse<string[]>> {
-    const res = await apiRequest<{ data?: Array<{ option: string }> }>({ 
-        method: "GET", 
-        path: "/webhook/maintenance-ticket-category" 
+    const res = await apiRequest<{ data?: Array<{ option: string }> }>({
+        method: "GET",
+        path: "/webhook/maintenance-ticket-category"
     });
     if (!res.success) return res as any;
-    
+
     const payload = res.data as any;
     let options: string[] = [];
-    
+
     if (Array.isArray(payload)) {
         const first = payload.find(Boolean);
         if (first?.data) {
@@ -2347,21 +2391,21 @@ export async function fetchMaintenanceTicketCategories(): Promise<ApiResponse<st
     } else if (payload?.data) {
         options = (payload.data as Array<{ option: string }>).map(item => item.option).filter(Boolean);
     }
-    
+
     return { success: true, status: 200, data: options };
 }
 
 // Fetch maintenance ticket types  
 export async function fetchMaintenanceTicketTypes(): Promise<ApiResponse<string[]>> {
-    const res = await apiRequest<{ data?: Array<{ option: string }> }>({ 
-        method: "GET", 
-        path: "/webhook/maintenance-ticket-type" 
+    const res = await apiRequest<{ data?: Array<{ option: string }> }>({
+        method: "GET",
+        path: "/webhook/maintenance-ticket-type"
     });
     if (!res.success) return res as any;
-    
+
     const payload = res.data as any;
     let options: string[] = [];
-    
+
     if (Array.isArray(payload)) {
         const first = payload.find(Boolean);
         if (first?.data) {
@@ -2370,7 +2414,7 @@ export async function fetchMaintenanceTicketTypes(): Promise<ApiResponse<string[
     } else if (payload?.data) {
         options = (payload.data as Array<{ option: string }>).map(item => item.option).filter(Boolean);
     }
-    
+
     return { success: true, status: 200, data: options };
 }
 
@@ -2397,7 +2441,7 @@ export async function createEmergencyMaintenanceTicket(input: CreateEmergencyMai
     // Get current user's staff code
     const user = getAuthUser() || ({} as any);
     const assignee = user["staff-code"] || user.staffCode || user.code || "";
-    
+
     const body = {
         "ticket-id": `TK${Date.now().toString().slice(-6)}`, // Generate ticket ID
         "customer-name": input.name,
@@ -2424,24 +2468,24 @@ export async function createEmergencyMaintenanceTicket(input: CreateEmergencyMai
         path: "/webhook/maintenance-ticket-create",
         body,
     });
-    
+
     if (!res.success) return res as any;
-    
+
     const status = (res.data as any)?.status;
     const isOk = typeof status === "string" ? status.toLowerCase() === "success" : true;
-    
+
     if (!isOk) {
-        return { 
-            success: false, 
-            status: res.status, 
-            message: (res.data as any)?.message || "Tạo ticket khẩn cấp không thành công" 
+        return {
+            success: false,
+            status: res.status,
+            message: (res.data as any)?.message || "Tạo ticket khẩn cấp không thành công"
         } as any;
     }
-    
-    return { 
-        success: true, 
-        status: res.status, 
-        data: { id: body["ticket-id"] } 
+
+    return {
+        success: true,
+        status: res.status,
+        data: { id: body["ticket-id"] }
     };
 }
 

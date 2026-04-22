@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { CustomerCombobox } from "@/components/ui/customer-combobox";
 import { toast } from "sonner";
-import { Paperclip, X, FileText, Upload } from "lucide-react";
+import { Paperclip, X, FileText, Camera, FolderOpen } from "lucide-react";
 
 const STATUS_OPTIONS = ["Chưa bắt đầu", "Đang thực hiện", "Đã hoàn thành"] as const;
 
@@ -25,7 +25,7 @@ interface CreateActivityTicketFormProps {
 
 const CreateActivityTicketForm: React.FC<CreateActivityTicketFormProps> = ({ open, onOpenChange }) => {
   const queryClient = useQueryClient();
-  
+
   // Form state
   const [formData, setFormData] = useState<CreateActivitySupportTicketInput>({
     name: "",
@@ -50,10 +50,10 @@ const CreateActivityTicketForm: React.FC<CreateActivityTicketFormProps> = ({ ope
     previewUrl?: string; // only for images
   }
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const MAX_FILE_SIZE_MB = 5;
+  const MAX_ATTACHMENTS = 5;
   const ACCEPTED_TYPES = [
     "image/jpeg", "image/png", "image/gif", "image/webp",
     "application/pdf",
@@ -63,13 +63,54 @@ const CreateActivityTicketForm: React.FC<CreateActivityTicketFormProps> = ({ ope
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ];
 
-  const fileToBase64 = (file: File): Promise<string> =>
+  // Auto-resize images before encoding (mirrors MaintenanceDetail pattern)
+  const resizeImage = (file: File, maxWidth = 1024, maxHeight = 1024, quality = 0.7): Promise<Blob> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string); // data:mime;base64,...
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > height) {
+            if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
+          } else {
+            if (height > maxHeight) { width = (width * maxHeight) / height; height = maxHeight; }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { reject(new Error("canvas context unavailable")); return; }
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("toBlob failed")), "image/jpeg", quality);
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+
+  const fileToBase64 = async (file: File): Promise<string> => {
+    try {
+      if (file.type.startsWith("image/")) {
+        const blob = await resizeImage(file);
+        const resized = new File([blob], file.name, { type: "image/jpeg" });
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(resized);
+        });
+      }
+    } catch (_) { /* fallback below */ }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
 
   const processFiles = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -78,14 +119,10 @@ const CreateActivityTicketForm: React.FC<CreateActivityTicketFormProps> = ({ ope
         toast.error(`File "${f.name}" không được hỗ trợ`);
         return false;
       }
-      if (f.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-        toast.error(`File "${f.name}" vượt quá ${MAX_FILE_SIZE_MB}MB`);
-        return false;
-      }
       return true;
     });
-    if (attachments.length + valid.length > 5) {
-      toast.error("Tối đa 5 tệp đính kèm");
+    if (attachments.length + valid.length > MAX_ATTACHMENTS) {
+      toast.error(`Tối đa ${MAX_ATTACHMENTS} tệp đính kèm`);
       return;
     }
     const converted = await Promise.all(
@@ -93,7 +130,7 @@ const CreateActivityTicketForm: React.FC<CreateActivityTicketFormProps> = ({ ope
         const base64 = await fileToBase64(f);
         return {
           name: f.name,
-          type: f.type,
+          type: f.type.startsWith("image/") ? "image/jpeg" : f.type,
           size: f.size,
           base64,
           previewUrl: f.type.startsWith("image/") ? base64 : undefined,
@@ -105,13 +142,7 @@ const CreateActivityTicketForm: React.FC<CreateActivityTicketFormProps> = ({ ope
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) processFiles(e.target.files);
-    e.target.value = ""; // reset so same file can be re-added after removal
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    processFiles(e.dataTransfer.files);
+    e.target.value = "";
   };
 
   const removeAttachment = (index: number) => {
@@ -186,12 +217,12 @@ const CreateActivityTicketForm: React.FC<CreateActivityTicketFormProps> = ({ ope
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       toast.error("Vui lòng nhập tên hoạt động");
       return;
     }
-    
+
     if (!formData.customer_name.trim() || !formData.customer_record_id) {
       toast.error("Vui lòng chọn khách hàng");
       return;
@@ -240,7 +271,7 @@ const CreateActivityTicketForm: React.FC<CreateActivityTicketFormProps> = ({ ope
         <DialogHeader>
           <DialogTitle>Tạo Ticket Hoạt động & Hỗ trợ</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Tên hoạt động */}
           <div className="space-y-2">
@@ -382,76 +413,77 @@ const CreateActivityTicketForm: React.FC<CreateActivityTicketFormProps> = ({ ope
             <Label className="flex items-center gap-1.5">
               <Paperclip className="h-4 w-4" />
               Hình ảnh/Tệp đính kèm
-              <span className="text-xs text-muted-foreground font-normal">(tối đa 5 tệp, mỗi tệp ≤ 5&nbsp;MB)</span>
             </Label>
 
-            {/* Drop zone */}
-            <div
-              className={`relative border-2 border-dashed rounded-lg px-4 py-5 text-center transition-colors cursor-pointer ${
-                isDragging
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-muted-foreground/30 hover:border-blue-400 hover:bg-blue-50/40"
-              }`}
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <Upload className="h-7 w-7 mx-auto mb-1.5 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                Kéo thả file vào đây hoặc{" "}
-                <span className="text-blue-500 font-medium">chọn tệp</span>
-              </p>
-              <p className="text-xs text-muted-foreground/70 mt-0.5">
-                Hỗ trợ: JPG, PNG, GIF, WEBP, PDF, DOC, DOCX, XLS, XLSX
-              </p>
+            {/* Hidden inputs */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 h-10 gap-2"
+                disabled={attachments.length >= MAX_ATTACHMENTS}
+                onClick={() => cameraInputRef.current?.click()}
+              >
+                <Camera className="h-4 w-4" />
+                Chụp ảnh
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 h-10 gap-2"
+                disabled={attachments.length >= MAX_ATTACHMENTS}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <FolderOpen className="h-4 w-4" />
+                Tải lên hình ảnh/tệp
+              </Button>
             </div>
 
             {/* Preview grid */}
             {attachments.length > 0 && (
-              <div className="grid grid-cols-2 gap-2 mt-2">
+              <div className="grid grid-cols-3 gap-2 mt-1">
                 {attachments.map((att, i) => (
-                  <div
-                    key={i}
-                    className="relative flex items-center gap-2 border rounded-md p-2 bg-muted/30 group"
-                  >
-                    {/* Thumbnail or file icon */}
+                  <div key={i} className="relative">
                     {att.previewUrl ? (
                       <img
                         src={att.previewUrl}
                         alt={att.name}
-                        className="h-10 w-10 object-cover rounded shrink-0"
+                        className="w-full aspect-square object-cover rounded-md border"
                       />
                     ) : (
-                      <div className="h-10 w-10 flex items-center justify-center rounded bg-muted shrink-0">
-                        {att.type === "application/pdf" ? (
-                          <FileText className="h-5 w-5 text-red-500" />
-                        ) : (
-                          <FileText className="h-5 w-5 text-blue-500" />
-                        )}
+                      <div className="w-full aspect-square flex flex-col items-center justify-center rounded-md border bg-muted gap-1 px-1">
+                        <FileText className={`h-6 w-6 ${att.type === "application/pdf" ? "text-red-500" : "text-blue-500"}`} />
+                        <p className="text-[10px] text-muted-foreground text-center truncate w-full px-1" title={att.name}>
+                          {att.name}
+                        </p>
                       </div>
                     )}
-                    {/* File info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate" title={att.name}>{att.name}</p>
-                      <p className="text-xs text-muted-foreground">{formatBytes(att.size)}</p>
-                    </div>
-                    {/* Remove button */}
+                    {/* Remove button — always visible on mobile */}
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); removeAttachment(i); }}
-                      className="absolute top-1 right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Xóa"
+                      onClick={() => removeAttachment(i)}
+                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow"
                     >
-                      <X className="h-2.5 w-2.5" />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ))}
@@ -464,8 +496,8 @@ const CreateActivityTicketForm: React.FC<CreateActivityTicketFormProps> = ({ ope
             <Button type="button" variant="ghost" onClick={handleClose}>
               Hủy
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={createTicketMutation.isPending}
               className="bg-blue-500 hover:bg-blue-600"
             >
