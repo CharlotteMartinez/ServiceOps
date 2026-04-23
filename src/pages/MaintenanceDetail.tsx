@@ -2,11 +2,11 @@ import Header from "@/components/Layout/Header";
 import DetailTopNav from "@/components/Layout/DetailTopNav";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { acceptTicket, getTicketDetail, TicketDetail as TicketDetailType, fetchMaintenanceTicketDetail, updateMaintenanceContactInfo, checkDeviceSerial, updateMaintenanceDeviceInfo, fetchMaintenanceTicketTypes, fetchMaintenanceTicketCategories, updateMaintenanceTypeCategory, updateMaintenanceFirstResponse, updateMaintenanceSupplierInstruction, maintenanceStart, maintenanceResult, acceptMaintenanceRepairTicket } from "@/lib/api";
+import { acceptTicket, getTicketDetail, TicketDetail as TicketDetailType, fetchMaintenanceTicketDetail, updateMaintenanceContactInfo, checkDeviceSerial, updateMaintenanceDeviceInfo, fetchMaintenanceTicketTypes, fetchMaintenanceTicketCategories, updateMaintenanceTypeCategory, updateMaintenanceFirstResponse, updateMaintenanceSupplierInstruction, maintenanceStart, maintenanceResult, acceptMaintenanceRepairTicket, updateMaintenanceStartImage, updateMaintenanceResultImage } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, AlarmClock, Building2, Mail, MapPin, Phone, Wrench, Camera, X, CheckCircle, PencilLine, PlayCircle, Package, Circle, Info } from "lucide-react";
+import { ArrowLeft, AlarmClock, Building2, Mail, MapPin, Phone, Wrench, Camera, X, CheckCircle, PencilLine, PlayCircle, Package, Circle, Info, FolderOpen } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import TicketActions from "@/components/Dashboard/TicketActions";
 import { useRef, useState } from "react";
@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast as sonnerToast } from "@/components/ui/sonner";
 import { useToast } from "@/hooks/use-toast";
+// MaintenanceDetail v2 – image optional, datetime input, update-image dialogs
 
 const Section = ({ title, icon, accentClass, rightSlot, children }: { title: string; icon?: React.ReactNode; accentClass?: string; rightSlot?: React.ReactNode; children: React.ReactNode }) => (
   <Card className="shadow-card">
@@ -141,8 +142,10 @@ const MaintenanceDetail = () => {
 
   const firstCameraInputRef = useRef<HTMLInputElement | null>(null);
   const firstFileInputRef = useRef<HTMLInputElement | null>(null);
-  const startInputRef = useRef<HTMLInputElement | null>(null);
-  const resultInputRef = useRef<HTMLInputElement | null>(null);
+  const startCameraInputRef = useRef<HTMLInputElement | null>(null);
+  const startFileInputRef = useRef<HTMLInputElement | null>(null);
+  const resultCameraInputRef = useRef<HTMLInputElement | null>(null);
+  const resultFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [firstImages, setFirstImages] = useState<File[]>([]);
   // Prefill First Response when opening dialog
@@ -151,6 +154,14 @@ const MaintenanceDetail = () => {
     setFirstNote(data?.firstResponse?.note || "");
     setFirstImages([]);
     setOpenFirst(true);
+  };
+
+  // Helper: convert ISO UTC string to datetime-local input value in LOCAL time
+  // datetime-local input expects 'YYYY-MM-DDTHH:mm' in local time, not UTC
+  const toLocalInput = (iso: string): string => {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
   // Helper: resize image to reduce size (optimize for mobile)
@@ -253,6 +264,8 @@ const MaintenanceDetail = () => {
     const loc = await getAddressString();
     setStartLocation(loc);
   };
+  // Alias for startInputRef (camera) to maintain backward compat
+  const startInputRef = startCameraInputRef;
 
   const openResultDialog = async () => {
     setResultTime("");
@@ -263,6 +276,8 @@ const MaintenanceDetail = () => {
     const loc = await getAddressString();
     setResultLocation(loc);
   };
+  // Alias for resultInputRef (camera) to maintain backward compat
+  const resultInputRef = resultCameraInputRef;
   // Prefill Supplier Instruction when opening dialog
   const openSupplierInstruction = () => {
     setSupplierContactTime(data?.supplierInstruction?.contactTime ? data!.supplierInstruction!.contactTime!.slice(0, 16) : "");
@@ -274,6 +289,16 @@ const MaintenanceDetail = () => {
   const [resultImages, setResultImages] = useState<File[]>([]);
   const [startLocation, setStartLocation] = useState<string>("");
   const [resultLocation, setResultLocation] = useState<string>("");
+
+  // "Cập nhật ảnh" dialogs (post-save image update)
+  const [openUpdateStartImage, setOpenUpdateStartImage] = useState(false);
+  const [openUpdateResultImage, setOpenUpdateResultImage] = useState(false);
+  const [updateStartImageFile, setUpdateStartImageFile] = useState<File | null>(null);
+  const [updateResultImageFile, setUpdateResultImageFile] = useState<File | null>(null);
+  const updateStartCamRef = useRef<HTMLInputElement | null>(null);
+  const updateStartFileRef = useRef<HTMLInputElement | null>(null);
+  const updateResultCamRef = useRef<HTMLInputElement | null>(null);
+  const updateResultFileRef = useRef<HTMLInputElement | null>(null);
 
   // Contact edit form state
   const [contactName, setContactName] = useState<string>("");
@@ -704,6 +729,10 @@ const MaintenanceDetail = () => {
                       <div className="space-y-2">
                         {hasStartTime && <div><span className="text-muted-foreground">Thời gian:</span> {formatDateTime(startTimeVal)}</div>}
                         {hasStartLocation && <div><span className="text-muted-foreground">Vị trí:</span> {startLocationVal}</div>}
+                        <Button variant="outline" size="sm" className="mt-1" onClick={() => setOpenUpdateStartImage(true)}>
+                          <Camera className="mr-1.5 h-3.5 w-3.5" />
+                          Cập nhật ảnh
+                        </Button>
                       </div>
                       {hasStartImage ? (
                         <img src={validStartImage as string} alt="start" className="h-20 w-20 object-cover rounded border justify-self-end" />
@@ -715,14 +744,9 @@ const MaintenanceDetail = () => {
                     </div>
                   </Section>
                 ) : (
-                  // <Section title="Bắt đầu thực hiện" icon={<PlayCircle className="h-5 w-5" />} accentClass="text-primary">
-                  //   <div className="flex items-center justify-between">
-                  //     <span className="text-sm text-muted-foreground">Chưa có thông tin</span>
-                  //     <Button variant="outline" size="sm" onClick={openStartDialog}>Bắt đầu thực hiện</Button>
-                  //   </div>
-                  // </Section>
                   <div></div>
                 )}
+
 
                 {(data.resultRecord?.time != "undefined" || data.maintenanceExtra?.completeLocation != "undefined") ? (
                   <Section title="Kết quả thực hiện" icon={<CheckCircle className="h-5 w-5" />} accentClass="text-emerald-600">
@@ -730,6 +754,10 @@ const MaintenanceDetail = () => {
                       <div className="space-y-2">
                         {data.resultRecord?.time && <div><span className="text-muted-foreground">Thời gian:</span> {formatDateTime(data.resultRecord.time)}</div>}
                         {data.maintenanceExtra?.completeLocation && <div><span className="text-muted-foreground">Vị trí:</span> {data.maintenanceExtra.completeLocation}</div>}
+                        <Button variant="outline" size="sm" className="mt-1" onClick={() => setOpenUpdateResultImage(true)}>
+                          <Camera className="mr-1.5 h-3.5 w-3.5" />
+                          Cập nhật ảnh
+                        </Button>
                       </div>
                       {data.resultRecord?.imageUrls && data.resultRecord.imageUrls.length > 0 ? (
                         (() => {
@@ -747,14 +775,6 @@ const MaintenanceDetail = () => {
                     </div>
                   </Section>
                 ) : (
-                  // <Section title="Kết quả thực hiện" icon={<CheckCircle className="h-5 w-5" />} accentClass="text-emerald-600">
-                  //   <div className="flex items-center justify-between">
-                  //     <span className="text-sm text-muted-foreground">Chưa có thông tin</span>
-                  //     <Button size="sm" onClick={openResultDialog}>
-                  //       Hoàn tất Ticket
-                  //     </Button>
-                  //   </div>
-                  // </Section>
                   <div></div>
                 )}
               </>
@@ -805,7 +825,8 @@ const MaintenanceDetail = () => {
                 multiple
                 onChange={(e) => {
                   const files = e.target.files ? Array.from(e.target.files) : [];
-                  setFirstImages(files);
+                  setFirstImages((prev) => [...prev, ...files]);
+                  e.target.value = "";
                 }}
                 className="hidden"
               />
@@ -813,13 +834,12 @@ const MaintenanceDetail = () => {
                 <Button variant="outline" size="sm" onClick={() => firstCameraInputRef.current?.click()}>
                   <Camera className="mr-2" /> Chụp ảnh
                 </Button>
-                <Button size="sm" onClick={() => firstFileInputRef.current?.click()}>
-                  Tải ảnh lên
+                <Button variant="outline" size="sm" onClick={() => firstFileInputRef.current?.click()}>
+                  <FolderOpen className="mr-2" /> Tải ảnh lên
                 </Button>
                 {firstImages.length > 0 && (
                   <>
-                    <Button variant="ghost" size="sm" onClick={() => { setFirstImages([]); firstCameraInputRef.current?.click(); }}>Chụp lại</Button>
-                    <Button variant="ghost" size="sm" onClick={() => { setFirstImages([]); firstFileInputRef.current?.click(); }}>Chọn ảnh khác</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setFirstImages([])}>Xóa tất cả</Button>
                     <span className="text-sm text-muted-foreground">{firstImages.length} ảnh đã chọn</span>
                   </>
                 )}
@@ -908,26 +928,92 @@ const MaintenanceDetail = () => {
             <DialogTitle>Ghi nhận bắt đầu thực hiện</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            {startLocation && <div className="text-xs text-muted-foreground">Vị trí: {startLocation}</div>}
+            {/* Thời gian bắt đầu */}
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium">Thời gian bắt đầu</label>
+              <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                <Input
+                  type="datetime-local"
+                  value={startTime ? toLocalInput(startTime) : ""}
+                  onChange={(e) => setStartTime(e.target.value ? new Date(e.target.value).toISOString() : "")}
+                  className="min-w-0"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="whitespace-nowrap"
+                  onClick={() => setStartTime(new Date().toISOString())}
+                >
+                  ⏱ Bắt đầu ngay
+                </Button>
+              </div>
+            </div>
+            {/* Vị trí */}
+            {startLocation && <div className="text-xs text-muted-foreground">📍 Vị trí: {startLocation}</div>}
+            {/* Hình ảnh (tuỳ chọn) */}
             <div>
+              <label className="block text-sm font-medium mb-1.5">Hình ảnh <span className="text-muted-foreground font-normal">(tuỳ chọn)</span></label>
+              {/* Camera input */}
               <input
-                ref={startInputRef}
-                id="start-images"
+                ref={startCameraInputRef}
+                id="start-images-camera"
                 type="file"
                 accept="image/*"
                 capture="environment"
                 multiple
                 onChange={(e) => {
                   const files = e.target.files ? Array.from(e.target.files) : [];
-                  setStartImages(files);
-                  if (files.length > 0) setStartTime(new Date().toISOString());
+                  setStartImages((prev) => [...prev, ...files]);
+                  e.target.value = "";
                 }}
                 className="hidden"
               />
-              <Button variant="outline" size="sm" onClick={() => startInputRef.current?.click()}>
-                <Camera className="mr-2" /> Chụp ảnh
-              </Button>
-              {startImages.length > 0 && <div className="text-xs text-muted-foreground mt-1">{startImages.length} ảnh</div>}
+              {/* File upload input (gallery) */}
+              <input
+                ref={startFileInputRef}
+                id="start-images-upload"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = e.target.files ? Array.from(e.target.files) : [];
+                  setStartImages((prev) => [...prev, ...files]);
+                  e.target.value = "";
+                }}
+                className="hidden"
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => startCameraInputRef.current?.click()}>
+                  <Camera className="mr-2" /> Chụp ảnh
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => startFileInputRef.current?.click()}>
+                  <FolderOpen className="mr-2" /> Tải ảnh lên
+                </Button>
+                {startImages.length > 0 && (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => setStartImages([])}>Xóa tất cả</Button>
+                    <span className="text-sm text-muted-foreground">{startImages.length} ảnh đã chọn</span>
+                  </>
+                )}
+              </div>
+              {startImages.length > 0 && (
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  {startImages.map((img, idx) => (
+                    <div key={idx} className="relative">
+                      <img src={URL.createObjectURL(img)} alt="preview" className="h-16 w-16 object-cover rounded border" />
+                      <button
+                        type="button"
+                        onClick={() => setStartImages((prev) => prev.filter((_, i) => i !== idx))}
+                        className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-black/70 text-white text-xs"
+                        aria-label="Xóa ảnh"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setOpenStart(false)}>Hủy</Button>
@@ -948,7 +1034,6 @@ const MaintenanceDetail = () => {
                     sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => { } } });
                   }
                 }}
-                disabled={startImages.length === 0}
               >
                 Lưu
               </Button>
@@ -957,35 +1042,78 @@ const MaintenanceDetail = () => {
         </DialogContent>
       </Dialog>
 
+
       <Dialog open={openResult} onOpenChange={setOpenResult}>
         <DialogContent className="max-w-md overflow-hidden">
           <DialogHeader>
             <DialogTitle>Ghi nhận kết quả</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            {/* Capture images */}
+            {/* Thời gian hoàn thành */}
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium">Thời gian hoàn thành</label>
+              <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                <Input
+                  type="datetime-local"
+                  value={resultTime ? toLocalInput(resultTime) : ""}
+                  onChange={(e) => setResultTime(e.target.value ? new Date(e.target.value).toISOString() : "")}
+                  className="min-w-0"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="whitespace-nowrap"
+                  onClick={() => setResultTime(new Date().toISOString())}
+                >
+                  ⏱ Hoàn thành ngay
+                </Button>
+              </div>
+            </div>
+            {/* Vị trí */}
+            {resultLocation && <div className="text-xs text-muted-foreground">📍 Vị trí: {resultLocation}</div>}
+            {/* Hình ảnh (tuỳ chọn) */}
             <div>
+              <label className="block text-sm font-medium mb-1.5">Hình ảnh <span className="text-muted-foreground font-normal">(tuỳ chọn)</span></label>
+              {/* Camera input */}
               <input
-                ref={resultInputRef}
-                id="result-images"
+                ref={resultCameraInputRef}
+                id="result-images-camera"
                 type="file"
                 accept="image/*"
                 capture="environment"
                 multiple
                 onChange={(e) => {
                   const files = e.target.files ? Array.from(e.target.files) : [];
-                  setResultImages(files);
-                  if (files.length > 0) setResultTime(new Date().toISOString());
+                  setResultImages((prev) => [...prev, ...files]);
+                  e.target.value = "";
                 }}
                 className="hidden"
               />
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => resultInputRef.current?.click()}>
+              {/* File upload input (gallery) */}
+              <input
+                ref={resultFileInputRef}
+                id="result-images-upload"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = e.target.files ? Array.from(e.target.files) : [];
+                  setResultImages((prev) => [...prev, ...files]);
+                  e.target.value = "";
+                }}
+                className="hidden"
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => resultCameraInputRef.current?.click()}>
                   <Camera className="mr-2" /> Chụp ảnh
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => resultFileInputRef.current?.click()}>
+                  <FolderOpen className="mr-2" /> Tải ảnh lên
                 </Button>
                 {resultImages.length > 0 && (
                   <>
-                    <Button variant="ghost" size="sm" onClick={() => { setResultImages([]); resultInputRef.current?.click(); }}>Chụp lại</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setResultImages([])}>Xóa tất cả</Button>
                     <span className="text-sm text-muted-foreground">{resultImages.length} ảnh đã chọn</span>
                   </>
                 )}
@@ -1030,10 +1158,6 @@ const MaintenanceDetail = () => {
             {/* Device selection removed as requested */}
 
             <Textarea placeholder="Kết quả thực hiện..." value={resultNote} onChange={(e) => setResultNote(e.target.value)} />
-            {resultLocation && <div className="text-xs text-muted-foreground">Vị trí: {resultLocation}</div>}
-            <div>
-              {resultImages.length > 0 && <div className="text-xs text-muted-foreground mt-1">{resultImages.length} ảnh</div>}
-            </div>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setOpenResult(false)}>Hủy</Button>
               <Button onClick={async () => {
@@ -1059,7 +1183,98 @@ const MaintenanceDetail = () => {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Dialog: Cập nhật ảnh Bắt đầu thực hiện */}
+      <Dialog open={openUpdateStartImage} onOpenChange={(o) => { setOpenUpdateStartImage(o); if (!o) setUpdateStartImageFile(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cập nhật ảnh bắt đầu thực hiện</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <input ref={updateStartCamRef} type="file" accept="image/*" capture="environment" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) setUpdateStartImageFile(f); e.target.value = ""; }} />
+            <input ref={updateStartFileRef} type="file" accept="image/*" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) setUpdateStartImageFile(f); e.target.value = ""; }} />
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => updateStartCamRef.current?.click()}>
+                <Camera className="mr-2" /> Chụp ảnh
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => updateStartFileRef.current?.click()}>
+                <FolderOpen className="mr-2" /> Tải ảnh lên
+              </Button>
+            </div>
+            {updateStartImageFile && (
+              <div className="relative w-fit">
+                <img src={URL.createObjectURL(updateStartImageFile)} alt="preview" className="h-24 w-24 object-cover rounded border" />
+                <button type="button" onClick={() => setUpdateStartImageFile(null)}
+                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-black/70 text-white text-xs">×</button>
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => { setOpenUpdateStartImage(false); setUpdateStartImageFile(null); }}>Hủy</Button>
+              <Button disabled={!updateStartImageFile} onClick={async () => {
+                if (!id || !updateStartImageFile) return;
+                const base64 = await fileToBase64(updateStartImageFile);
+                const res = await updateMaintenanceStartImage(id, base64);
+                if (res.success) {
+                  sonnerToast.success("Đã cập nhật ảnh bắt đầu", { action: { label: "Đóng", onClick: () => { } } });
+                  setOpenUpdateStartImage(false); setUpdateStartImageFile(null);
+                  qc.invalidateQueries({ queryKey: ["ticket-detail", "maintenance", id] });
+                } else {
+                  sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => { } } });
+                }
+              }}>Lưu</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Cập nhật ảnh Ghi nhận kết quả */}
+      <Dialog open={openUpdateResultImage} onOpenChange={(o) => { setOpenUpdateResultImage(o); if (!o) setUpdateResultImageFile(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cập nhật ảnh kết quả</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <input ref={updateResultCamRef} type="file" accept="image/*" capture="environment" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) setUpdateResultImageFile(f); e.target.value = ""; }} />
+            <input ref={updateResultFileRef} type="file" accept="image/*" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) setUpdateResultImageFile(f); e.target.value = ""; }} />
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => updateResultCamRef.current?.click()}>
+                <Camera className="mr-2" /> Chụp ảnh
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => updateResultFileRef.current?.click()}>
+                <FolderOpen className="mr-2" /> Tải ảnh lên
+              </Button>
+            </div>
+            {updateResultImageFile && (
+              <div className="relative w-fit">
+                <img src={URL.createObjectURL(updateResultImageFile)} alt="preview" className="h-24 w-24 object-cover rounded border" />
+                <button type="button" onClick={() => setUpdateResultImageFile(null)}
+                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-black/70 text-white text-xs">×</button>
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => { setOpenUpdateResultImage(false); setUpdateResultImageFile(null); }}>Hủy</Button>
+              <Button disabled={!updateResultImageFile} onClick={async () => {
+                if (!id || !updateResultImageFile) return;
+                const base64 = await fileToBase64(updateResultImageFile);
+                const res = await updateMaintenanceResultImage(id, base64);
+                if (res.success) {
+                  sonnerToast.success("Đã cập nhật ảnh kết quả", { action: { label: "Đóng", onClick: () => { } } });
+                  setOpenUpdateResultImage(false); setUpdateResultImageFile(null);
+                  qc.invalidateQueries({ queryKey: ["ticket-detail", "maintenance", id] });
+                } else {
+                  sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => { } } });
+                }
+              }}>Lưu</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Bottom Action Bar (Tiếp nhận/Hoàn tất) */}
+
       <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-3 flex items-center gap-2">
           {data && isAssigned && (

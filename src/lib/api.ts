@@ -1756,6 +1756,56 @@ export async function maintenanceResult(
     return { success: true, status: res.status, data: { ok: true } };
 }
 
+// Update start image only (separate from maintenanceStart to avoid overwriting status/time/location)
+export async function updateMaintenanceStartImage(
+    ticketId: string,
+    imageBase64: string,
+): Promise<ApiResponse<{ ok: true }>> {
+    const user = getAuthUser() || ({} as any);
+    const email = (user as any)?.email;
+    const staffCode = (user as any)["staff-code"] || (user as any).staffCode || (user as any).code || undefined;
+
+    const body: any = { "ticket-id": ticketId, data: { "start-image": imageBase64 } };
+    if (email) body.email = email;
+    if (staffCode) body["staff-code"] = staffCode;
+
+    const res = await apiRequest<{ status?: string; message?: string; data?: any }>({
+        method: "POST",
+        path: "/webhook/ticket/maintenance-start-image",
+        body,
+    });
+    if (!res.success) return res as any;
+    const status = (res.data as any)?.status;
+    const isOk = typeof status === "string" ? status.toLowerCase() === "success" : true;
+    if (!isOk) return { success: false, status: res.status, message: (res.data as any)?.message || "Cập nhật ảnh không thành công" } as any;
+    return { success: true, status: res.status, data: { ok: true } };
+}
+
+// Update result image only (separate from maintenanceResult to avoid overwriting status/time/location)
+export async function updateMaintenanceResultImage(
+    ticketId: string,
+    imageBase64: string,
+): Promise<ApiResponse<{ ok: true }>> {
+    const user = getAuthUser() || ({} as any);
+    const email = (user as any)?.email;
+    const staffCode = (user as any)["staff-code"] || (user as any).staffCode || (user as any).code || undefined;
+
+    const body: any = { "ticket-id": ticketId, data: { "result-image": imageBase64 } };
+    if (email) body.email = email;
+    if (staffCode) body["staff-code"] = staffCode;
+
+    const res = await apiRequest<{ status?: string; message?: string; data?: any }>({
+        method: "POST",
+        path: "/webhook/ticket/maintenance-result-image",
+        body,
+    });
+    if (!res.success) return res as any;
+    const status = (res.data as any)?.status;
+    const isOk = typeof status === "string" ? status.toLowerCase() === "success" : true;
+    if (!isOk) return { success: false, status: res.status, message: (res.data as any)?.message || "Cập nhật ảnh không thành công" } as any;
+    return { success: true, status: res.status, data: { ok: true } };
+}
+
 // ---------------------- Activity & Support (n8n) ----------------------
 type ExternalActivityItem = {
     "ticket_id": string;

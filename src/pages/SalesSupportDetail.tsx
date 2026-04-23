@@ -352,9 +352,10 @@ const SalesSupportDetail = () => {
     let deadline = "";
     if (data?.deadline) {
       try {
-        const deadlineDate = new Date(data.deadline);
-        if (!isNaN(deadlineDate.getTime())) {
-          deadline = deadlineDate.toISOString().slice(0, 16);
+        const d = new Date(data.deadline);
+        if (!isNaN(d.getTime())) {
+          const pad = (n: number) => String(n).padStart(2, "0");
+          deadline = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
         }
       } catch (e) {
         console.warn("Invalid deadline date:", data.deadline);
@@ -367,9 +368,10 @@ const SalesSupportDetail = () => {
     let completeDate = "";
     if (data?.activityInfo?.endTime) {
       try {
-        const completeDateObj = new Date(data.activityInfo.endTime);
-        if (!isNaN(completeDateObj.getTime())) {
-          completeDate = completeDateObj.toISOString().slice(0, 16);
+        const d = new Date(data.activityInfo.endTime);
+        if (!isNaN(d.getTime())) {
+          const pad = (n: number) => String(n).padStart(2, "0");
+          completeDate = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
         }
       } catch (e) {
         console.warn("Invalid complete date:", data.activityInfo.endTime);
