@@ -230,7 +230,7 @@ export interface TicketDetail extends TicketSummary {
     orderInfo?: {
         orderCode?: string;
         itemsCount?: number;
-        secretCodes?: Array<{ code: string; productId?: string; name?: string; quantity?: number }>;
+        secretCodes?: Array<{ code: string; productId?: string; name?: string; description?: string; quantity?: number }>;
         // Extended fields for delivery/installation order detail
         customerName?: string;
         totalAmount?: number;
@@ -243,7 +243,7 @@ export interface TicketDetail extends TicketSummary {
         assignedDate?: string;
         status?: string;
     };
-    goodsInfo?: Array<{ sku?: string; name: string; quantity: number }>;
+    goodsInfo?: Array<{ sku?: string; name: string; description?: string; quantity: number }>;
     deviceInfo?: Array<{ model?: string; serial?: string; deviceCode?: string; deviceId?: string; quantity?: number }>;
     notes?: string;
     // Maintenance flow sections (optional)
@@ -1189,12 +1189,29 @@ export async function fetchDeliveryInstallTicketDetail(ticketId: string): Promis
     const rawProductList: string[] = Array.isArray((d as any).product_list) ? (d as any).product_list : [];
     const hasNewFormat = rawProductCodes.length > 0 || rawProductList.length > 0;
 
+    const rawProductDescs: string[] = Array.isArray((d as any).product_desc)
+        ? (d as any).product_desc
+        : Array.isArray((d as any).product_description)
+            ? (d as any).product_description
+            : [];
+
     const goodsInfo = hasNewFormat
-        ? rawProductCodes.map((code, idx) => ({ sku: code, name: rawProductList[idx] || code || "Hàng hóa", quantity: 1 }))
+        ? rawProductCodes.map((code, idx) => ({
+            sku: code,
+            name: rawProductList[idx] || code || "Hàng hóa",
+            description: rawProductDescs[idx] || rawProductList[idx] || undefined,
+            quantity: 1
+        }))
         : Array.isArray(d.products)
             ? d.products
-                .filter((p) => p && (p.name || p.sku))
-                .map((p) => ({ sku: p.sku, productId: p.product_id, name: p.name || "Hàng hóa", quantity: Number(p.quantity || 1) }))
+                .filter((p) => p && (p.name || p.sku || p.description))
+                .map((p) => ({
+                    sku: p.sku,
+                    productId: p.product_id,
+                    name: p.name || "Hàng hóa",
+                    description: p.description,
+                    quantity: Number(p.quantity || 1)
+                }))
             : [];
 
     console.log('[fetchDeliveryInstallTicketDetail] goodsInfo result:', { hasNewFormat, count: goodsInfo.length, goodsInfo });
@@ -1225,7 +1242,13 @@ export async function fetchDeliveryInstallTicketDetail(ticketId: string): Promis
         orderInfo: {
             orderCode: d.orderDetail?.orderCode || d.order_id,
             itemsCount: goodsInfo.length || undefined,
-            secretCodes: goodsInfo.map((p) => ({ code: p.sku || "", productId: (p as any).productId, name: p.name || "Hàng hóa", quantity: Number(p.quantity || 1) })),
+            secretCodes: goodsInfo.map((p) => ({
+                code: p.sku || "",
+                productId: (p as any).productId,
+                name: p.name || "Hàng hóa",
+                description: p.description,
+                quantity: Number(p.quantity || 1)
+            })),
             customerName: d.orderDetail?.customerName,
             totalAmount: d.orderDetail?.totalAmount,
             orderDate: d.orderDetail?.orderDate,
@@ -1548,7 +1571,7 @@ export async function fetchMaintenanceTicketDetail(ticketId: string): Promise<Ap
         },
         resultRecord: {
             time: d.complete_time,
-            note: d.feedback_content,
+            note: d.result_note || d.feedback_content, // Fallback to feedback_content if result_note is missing, but primarily use result_note
             imageUrls: d.complete_image ? [d.complete_image] : undefined,
         },
     };
