@@ -592,7 +592,15 @@ const DeliveryInstallDetail = () => {
                         <TableRow key={idx} className="hover:bg-muted/50">
                           <TableCell className="font-mono text-xs text-muted-foreground">{it.code}</TableCell>
                           <TableCell>
-                            {Array.isArray(it.name) ? (
+                            {Array.isArray(it.description) ? (
+                              <ul className="list-disc pl-4 space-y-1">
+                                {it.description.map((n: string, i: number) => (
+                                  <li key={i}>{n}</li>
+                                ))}
+                              </ul>
+                            ) : it.description ? (
+                              <div className="whitespace-pre-wrap">{it.description}</div>
+                            ) : Array.isArray(it.name) ? (
                               <ul className="list-disc pl-4 space-y-1">
                                 {it.name.map((n: string, i: number) => (
                                   <li key={i}>{n}</li>
@@ -719,7 +727,7 @@ const DeliveryInstallDetail = () => {
                       <label key={idx} className="flex items-center gap-2 border rounded p-2">
                         <input type="checkbox" checked={selectedGoods.includes(it.code)} onChange={() => handleGoodsChange(it.code)} />
                         <span className="text-xs font-mono">{it.code}</span>
-                        <span className="text-sm">{it.name || "Mặt hàng"}</span>
+                        <span className="text-sm">{it.description || it.name || "Mặt hàng"}</span>
                       </label>
                     ))}
                   </div>

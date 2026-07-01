@@ -383,6 +383,16 @@ const MaintenanceDetail = () => {
     },
   });
 
+  // Result Note edit dialog state
+  const [openUpdateResultNote, setOpenUpdateResultNote] = useState(false);
+  const [updateResultNoteText, setUpdateResultNoteText] = useState("");
+  const openResultNote = () => {
+    const note = data?.resultRecord?.note;
+    const isValid = typeof note === "string" && note.trim().length > 0 && note.trim().toLowerCase() !== "undefined" && note.trim().toLowerCase() !== "null";
+    setUpdateResultNoteText(isValid ? note : "");
+    setOpenUpdateResultNote(true);
+  };
+
   // Issue/Service dialog state
   const [typeOptions, setTypeOptions] = useState<string[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
@@ -417,8 +427,8 @@ const MaintenanceDetail = () => {
 
   // Build selectable lists from available data
   const goodsCandidates: Array<{ id: string; label: string }> =
-    (data?.orderInfo?.secretCodes?.map((it: any, idx: number) => ({ id: String(it.code || idx), label: `${it.code || `MH-${idx + 1}`} ${it.name ? `- ${it.name}` : ""}` })) ||
-      data?.goodsInfo?.map((g: any, idx: number) => ({ id: `G-${idx}`, label: `${g.name || `Hạng mục ${idx + 1}`}${g.quantity ? ` - x${g.quantity}` : ""}` })) ||
+    (data?.orderInfo?.secretCodes?.map((it: any, idx: number) => ({ id: String(it.code || idx), label: `${it.code || `MH-${idx + 1}`} ${it.description || it.name ? `- ${it.description || it.name}` : ""}` })) ||
+      data?.goodsInfo?.map((g: any, idx: number) => ({ id: `G-${idx}`, label: `${g.description || g.name || `Hạng mục ${idx + 1}`}${g.quantity ? ` - x${g.quantity}` : ""}` })) ||
       []);
 
   // Removed deviceCandidates section per requirement
@@ -749,11 +759,12 @@ const MaintenanceDetail = () => {
 
 
                 {(data.resultRecord?.time != "undefined" || data.maintenanceExtra?.completeLocation != "undefined") ? (
-                  <Section title="Kết quả thực hiện" icon={<CheckCircle className="h-5 w-5" />} accentClass="text-emerald-600">
+                  <Section title="Kết quả thực hiện" icon={<CheckCircle className="h-5 w-5" />} accentClass="text-emerald-600" rightSlot={<button onClick={openResultNote} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><PencilLine className="h-4 w-4" />Cập nhật</button>}>
                     <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-sm">
                       <div className="space-y-2">
                         {data.resultRecord?.time && <div><span className="text-muted-foreground">Thời gian:</span> {formatDateTime(data.resultRecord.time)}</div>}
-                        {data.maintenanceExtra?.completeLocation && <div><span className="text-muted-foreground">Vị trí:</span> {data.maintenanceExtra.completeLocation}</div>}
+                        {data.maintenanceExtra?.completeLocation && data.maintenanceExtra.completeLocation !== "undefined" && <div><span className="text-muted-foreground">Vị trí:</span> {data.maintenanceExtra.completeLocation}</div>}
+                        {isNonEmpty(data.resultRecord?.note) && <div className="whitespace-pre-wrap"><span className="text-muted-foreground">Ghi chú: </span>{data.resultRecord?.note}</div>}
                         <Button variant="outline" size="sm" className="mt-1" onClick={() => setOpenUpdateResultImage(true)}>
                           <Camera className="mr-1.5 h-3.5 w-3.5" />
                           Cập nhật ảnh
@@ -1263,6 +1274,40 @@ const MaintenanceDetail = () => {
                 if (res.success) {
                   sonnerToast.success("Đã cập nhật ảnh kết quả", { action: { label: "Đóng", onClick: () => { } } });
                   setOpenUpdateResultImage(false); setUpdateResultImageFile(null);
+                  qc.invalidateQueries({ queryKey: ["ticket-detail", "maintenance", id] });
+                } else {
+                  sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => { } } });
+                }
+              }}>Lưu</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openUpdateResultNote} onOpenChange={setOpenUpdateResultNote}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cập nhật ghi chú kết quả</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Nhập ghi chú..."
+              value={updateResultNoteText}
+              onChange={(e) => setUpdateResultNoteText(e.target.value)}
+              rows={4}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setOpenUpdateResultNote(false)}>Hủy</Button>
+              <Button onClick={async () => {
+                if (!id) return;
+                const res = await maintenanceResult(id, { 
+                  note: updateResultNoteText,
+                  "result-time": data?.resultRecord?.time,
+                  "result-location": data?.maintenanceExtra?.completeLocation
+                });
+                if (res.success) {
+                  sonnerToast.success("Đã cập nhật ghi chú", { action: { label: "Đóng", onClick: () => { } } });
+                  setOpenUpdateResultNote(false);
                   qc.invalidateQueries({ queryKey: ["ticket-detail", "maintenance", id] });
                 } else {
                   sonnerToast.error("Cập nhật thất bại", { description: res.message || "Vui lòng thử lại.", action: { label: "Đóng", onClick: () => { } } });
