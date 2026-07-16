@@ -585,6 +585,7 @@ const DeliveryInstallDetail = () => {
                       <TableRow>
                         <TableHead className="w-[140px]">Mã hàng</TableHead>
                         <TableHead>Tên hàng</TableHead>
+                        <TableHead className="w-[100px] text-right">Số lượng</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -610,6 +611,9 @@ const DeliveryInstallDetail = () => {
                               <div className="whitespace-pre-wrap">{it.name || "Mặt hàng"}</div>
                             )}
                           </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {it.quantity ?? 1}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -627,6 +631,7 @@ const DeliveryInstallDetail = () => {
                       <TableRow>
                         <TableHead className="w-[140px]">S/N hoặc Mã TB</TableHead>
                         <TableHead>Tên thiết bị</TableHead>
+                        <TableHead className="w-[100px] text-right">Số lượng</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -643,6 +648,9 @@ const DeliveryInstallDetail = () => {
                             ) : (
                               <div className="whitespace-pre-wrap">{d.model || "Thiết bị"}</div>
                             )}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {d.quantity ?? 1}
                           </TableCell>
                         </TableRow>
                       ))}
