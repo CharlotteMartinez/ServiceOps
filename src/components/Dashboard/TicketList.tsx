@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Package, FileText } from "lucide-react";
-import { cn, formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime, formatDate } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { getTickets, TicketStatus, TicketSummary, TicketType } from "@/lib/api";
@@ -180,7 +180,7 @@ const TicketList = ({ type, status, searchQuery }: Props) => {
             <div className="flex items-center space-x-1 text-sm">
               <Clock className={cn("h-4 w-4", ticket.type === 'maintenance' ? "text-primary" : "text-orange-500")} />
               <span className={cn("font-medium", ticket.type === 'maintenance' ? "text-primary" : "text-orange-600")}>
-                {ticket.type === 'maintenance' ? 'Yêu cầu lúc:' : 'Hạn:'} {formatDateTime(ticket.deadline)}
+                {ticket.type === 'maintenance' ? 'Yêu cầu lúc:' : 'Hạn:'} {ticket.type === 'delivery' ? formatDate(ticket.deadline) : formatDateTime(ticket.deadline)}
               </span>
             </div>
             <Badge className={cn("text-xs", getStatusColor(ticket.status))}>
