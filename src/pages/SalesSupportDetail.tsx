@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, AlarmClock, Building2, MapPin, CheckCircle, Paperclip, FileText, X, ChevronLeft, ChevronRight, Camera, FolderOpen } from "lucide-react";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, displayValue } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -553,11 +553,11 @@ const SalesSupportDetail = () => {
             {/* Thông tin hoạt động */}
             <Section title="Thông tin hoạt động">
               <div className="text-sm space-y-2">
-                {activityName && (<div><span className="text-muted-foreground">Tên hoạt động:</span> <span className="font-medium">{activityName}</span></div>)}
-                {data.subTypeLabel && (<div><span className="text-muted-foreground">Loại hoạt động:</span> <span className="font-medium">{data.subTypeLabel}</span></div>)}
-                {data.activityInfo?.description && (<div><span className="text-muted-foreground">Mô tả:</span> {data.activityInfo.description}</div>)}
-                {data.activityInfo?.owner && (<div><span className="text-muted-foreground">Tên liên hệ:</span> {data.activityInfo.owner}</div>)}
-                {data.projectCode && (<div><span className="text-muted-foreground">Đơn hàng liên quan:</span> {data.projectCode}</div>)}
+                {activityName && (<div><span className="text-muted-foreground">Tên hoạt động:</span> <span className="font-medium">{displayValue(activityName)}</span></div>)}
+                {data.subTypeLabel && (<div><span className="text-muted-foreground">Loại hoạt động:</span> <span className="font-medium">{displayValue(data.subTypeLabel)}</span></div>)}
+                {data.activityInfo?.description && (<div><span className="text-muted-foreground">Mô tả:</span> {displayValue(data.activityInfo.description)}</div>)}
+                {data.activityInfo?.owner && (<div><span className="text-muted-foreground">Tên liên hệ:</span> {displayValue(data.activityInfo.owner)}</div>)}
+                {data.projectCode && (<div><span className="text-muted-foreground">Đơn hàng liên quan:</span> {displayValue(data.projectCode)}</div>)}
               </div>
             </Section>
 
@@ -606,8 +606,18 @@ const SalesSupportDetail = () => {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             // Nếu load ảnh lỗi (URL hết hạn), hiển thị icon fallback
-                            (e.target as HTMLImageElement).style.display = "none";
-                            (e.target as HTMLImageElement).parentElement?.classList.add("flex", "items-center", "justify-center");
+                            const img = e.target as HTMLImageElement;
+                            img.style.display = "none";
+                            const parent = img.parentElement;
+                            if (parent) {
+                              parent.classList.add("flex", "items-center", "justify-center");
+                              if (!parent.querySelector(".fallback-text")) {
+                                const span = document.createElement("span");
+                                span.className = "fallback-text text-xs text-muted-foreground italic text-center p-2";
+                                span.innerText = "Chưa có hình ảnh để hiển thị.";
+                                parent.appendChild(span);
+                              }
+                            }
                           }}
                         />
                       </button>

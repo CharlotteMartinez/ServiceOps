@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, AlarmClock, Building2, Mail, MapPin, Phone, Wrench, Camera, X, CheckCircle, PencilLine, PlayCircle, Package, Circle, Info, FolderOpen } from "lucide-react";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, displayValue } from "@/lib/utils";
 import TicketActions from "@/components/Dashboard/TicketActions";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -622,10 +622,10 @@ const MaintenanceDetail = () => {
             {/* 2/ Nhóm thông tin thiết bị */}
             <Section title="Thông tin thiết bị" icon={<Wrench className="h-5 w-5" />} accentClass="text-violet-600" rightSlot={<button onClick={() => setOpenDeviceEdit(true)} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><PencilLine className="h-4 w-4" />Cập nhật</button>}>
               <div className="text-sm grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {data.maintenanceExtra?.deviceBrand && (<div><span className="text-muted-foreground">Hãng:</span> <span className="font-medium">{data.maintenanceExtra.deviceBrand}</span></div>)}
-                {data.maintenanceExtra?.deviceModel && (<div><span className="text-muted-foreground">Model:</span> <span className="font-medium">{data.maintenanceExtra.deviceModel}</span></div>)}
-                {data.maintenanceExtra?.serialNumber && (<div><span className="text-muted-foreground">Serial:</span> <span className="font-mono">{data.maintenanceExtra.serialNumber}</span></div>)}
-                {data.maintenanceExtra?.installationDate && (<div><span className="text-muted-foreground">Ngày lắp đặt:</span> <span>{formatDateTime(data.maintenanceExtra.installationDate)}</span></div>)}
+                {data.maintenanceExtra?.deviceBrand && (<div><span className="text-muted-foreground">Hãng:</span> <span className="font-medium">{displayValue(data.maintenanceExtra.deviceBrand)}</span></div>)}
+                {data.maintenanceExtra?.deviceModel && (<div><span className="text-muted-foreground">Model:</span> <span className="font-medium">{displayValue(data.maintenanceExtra.deviceModel)}</span></div>)}
+                {data.maintenanceExtra?.serialNumber && (<div><span className="text-muted-foreground">Serial:</span> <span className="font-mono">{displayValue(data.maintenanceExtra.serialNumber)}</span></div>)}
+                {data.maintenanceExtra?.installationDate && (<div><span className="text-muted-foreground">Ngày lắp đặt:</span> <span>{displayValue(data.maintenanceExtra.installationDate) !== "Chưa xác định" ? formatDateTime(data.maintenanceExtra.installationDate) : "Chưa xác định"}</span></div>)}
               </div>
             </Section>
 
@@ -633,8 +633,8 @@ const MaintenanceDetail = () => {
             <Section title="Vấn đề / Dịch vụ" icon={<AlarmClock className="h-5 w-5" />} accentClass="text-orange-600" rightSlot={<button onClick={openIssue} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><PencilLine className="h-4 w-4" />Cập nhật</button>}>
               <div className="text-sm space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {data.maintenanceExtra?.ticketType && (<div><span className="text-muted-foreground">Loại dịch vụ:</span> <span className="font-medium">{data.maintenanceExtra.ticketType}</span></div>)}
-                  {data.maintenanceExtra?.ticketCategory && (<div><span className="text-muted-foreground">Nhóm:</span> <span className="font-medium">{data.maintenanceExtra.ticketCategory}</span></div>)}
+                  {data.maintenanceExtra?.ticketType && (<div><span className="text-muted-foreground">Loại dịch vụ:</span> <span className="font-medium">{displayValue(data.maintenanceExtra.ticketType)}</span></div>)}
+                  {data.maintenanceExtra?.ticketCategory && (<div><span className="text-muted-foreground">Nhóm:</span> <span className="font-medium">{displayValue(data.maintenanceExtra.ticketCategory)}</span></div>)}
                   {data.maintenanceExtra?.createdAt && (<div><span className="text-muted-foreground">Tạo lúc:</span> <span>{formatDateTime(data.maintenanceExtra.createdAt)}</span></div>)}
                   {data.maintenanceExtra?.assignedAt && (<div><span className="text-muted-foreground">Phân công lúc:</span> <span>{formatDateTime(data.maintenanceExtra.assignedAt)}</span></div>)}
                 </div>
@@ -647,7 +647,17 @@ const MaintenanceDetail = () => {
                 {data.maintenanceExtra?.imageDeviceUrl && (
                   <div>
                     <div className="text-muted-foreground mb-1">Ảnh</div>
-                    <img src={data.maintenanceExtra.imageDeviceUrl} alt="device" className="max-h-64 rounded border block mx-auto" />
+                    {(() => {
+                      const url = data.maintenanceExtra?.imageDeviceUrl;
+                      const isValid = url && url !== "undefined" && url !== "null" && (url.startsWith("http") || url.startsWith("data:") || url.startsWith("/"));
+                      return isValid ? (
+                        <img src={url} alt="device" className="max-h-64 rounded border block mx-auto" />
+                      ) : (
+                        <div className="italic flex items-center justify-center h-20 w-auto rounded border bg-muted/40 text-xs text-muted-foreground text-center p-3 mx-auto">
+                          Chưa có hình ảnh để hiển thị.
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -664,7 +674,17 @@ const MaintenanceDetail = () => {
                         {data.firstResponse?.note && <div><span className="text-muted-foreground">Nội dung:</span> {data.firstResponse.note}</div>}
                       </div>
                       {data.firstResponse?.imageUrls && data.firstResponse.imageUrls.length > 0 ? (
-                        <img src={data.firstResponse.imageUrls[0]} alt="first-response" className="h-20 w-20 object-cover rounded border justify-self-end" />
+                        (() => {
+                          const url = data.firstResponse.imageUrls[0];
+                          const isValid = url && url !== "undefined" && url !== "null" && (url.startsWith("http") || url.startsWith("data:") || url.startsWith("/"));
+                          return isValid ? (
+                            <img src={url} alt="first-response" className="h-20 w-20 object-cover rounded border justify-self-end" />
+                          ) : (
+                            <div className="italic flex items-center justify-center h-20 w-32 rounded border bg-muted/40 text-xs text-muted-foreground text-center p-1 justify-self-end">
+                              Chưa có hình ảnh để hiển thị.
+                            </div>
+                          );
+                        })()
                       ) : null}
                     </div>
                   ) : (
@@ -747,8 +767,8 @@ const MaintenanceDetail = () => {
                       {hasStartImage ? (
                         <img src={validStartImage as string} alt="start" className="h-20 w-20 object-cover rounded border justify-self-end" />
                       ) : (
-                        <div className="italic flex items-center justify-center h-20 w-20 rounded border bg-muted/40 text-xs text-muted-foreground text-center p-1 justify-self-end">
-                          Không có hình ảnh
+                        <div className="italic flex items-center justify-center h-20 w-32 rounded border bg-muted/40 text-xs text-muted-foreground text-center p-1 justify-self-end">
+                          Chưa có hình ảnh để hiển thị.
                         </div>
                       )}
                     </div>
@@ -777,8 +797,8 @@ const MaintenanceDetail = () => {
                           return isValid ? (
                             <img src={url} alt="result" className="h-20 w-20 object-cover rounded border justify-self-end" />
                           ) : (
-                            <div className="italic flex items-center justify-center h-20 w-20 rounded border bg-muted/40 text-xs text-muted-foreground text-center p-1 justify-self-end">
-                              Không có hình ảnh
+                            <div className="italic flex items-center justify-center h-20 w-32 rounded border bg-muted/40 text-xs text-muted-foreground text-center p-1 justify-self-end">
+                              Chưa có hình ảnh để hiển thị.
                             </div>
                           );
                         })()
