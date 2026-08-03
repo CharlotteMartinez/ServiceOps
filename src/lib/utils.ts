@@ -28,3 +28,10 @@ export function formatDate(input?: string | number | Date): string {
   const yyyy = date.getFullYear();
   return `${dd}-${mm}-${yyyy}`;
 }
+
+export function displayValue(val: any, fallback = "Chưa xác định"): string {
+  if (val === undefined || val === null || val === "undefined" || val === "null" || val === "") {
+    return fallback;
+  }
+  return String(val);
+}

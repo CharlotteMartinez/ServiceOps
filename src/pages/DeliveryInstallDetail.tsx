@@ -10,7 +10,7 @@ import { AlarmClock, Building2, Mail, MapPin, Phone, PlayCircle, CheckCircle, Ca
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, displayValue } from "@/lib/utils";
 import { toast as notify } from "@/components/ui/sonner";
 import React, { useRef, useState, useEffect } from "react";
 
@@ -492,7 +492,7 @@ const DeliveryInstallDetail = () => {
                       </button>
                     ) : (
                       <div className="mt-2 flex items-center justify-center h-16 text-sm text-muted-foreground italic">
-                        Không có hình ảnh
+                        Chưa có hình ảnh để hiển thị.
                       </div>
                     )}
                   </div>
