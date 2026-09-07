@@ -259,16 +259,6 @@ const CreateEmergencyMaintenanceForm: React.FC<CreateEmergencyMaintenanceFormPro
       toast.error("Vui lòng chọn khách hàng");
       return;
     }
-    
-    if (!formData.name.trim()) {
-      toast.error("Vui lòng nhập họ và tên");
-      return;
-    }
-    
-    if (!formData.phone.trim()) {
-      toast.error("Vui lòng nhập số điện thoại");
-      return;
-    }
 
     // Validate device info
     if (!isManualDeviceInput && !selectedDevice) {
