@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, AlarmClock, Building2, Mail, MapPin, Phone, Wrench, Camera, X, CheckCircle, PencilLine, PlayCircle, Package, Circle, Info, FolderOpen } from "lucide-react";
-import { formatDateTime, displayValue } from "@/lib/utils";
+import { formatDateTime, displayValue, parseDateHelper } from "@/lib/utils";
 import TicketActions from "@/components/Dashboard/TicketActions";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -159,7 +159,7 @@ const MaintenanceDetail = () => {
   // Helper: convert ISO UTC string to datetime-local input value in LOCAL time
   // datetime-local input expects 'YYYY-MM-DDTHH:mm' in local time, not UTC
   const toLocalInput = (iso: string): string => {
-    const d = new Date(iso);
+    const d = parseDateHelper(iso);
     const pad = (n: number) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };

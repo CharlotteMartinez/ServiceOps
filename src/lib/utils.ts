@@ -6,9 +6,24 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Format date to dd-MM-yyyy HH:mm
+export function parseDateHelper(input?: string | number | Date): Date {
+  if (!input) return new Date("");
+  if (typeof input === 'string') {
+    let isoString = input;
+    if (isoString.includes(" ") && !isoString.includes("T")) {
+      isoString = isoString.replace(" ", "T");
+    }
+    if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(isoString) && isoString.includes("T")) {
+       isoString += "Z";
+    }
+    return new Date(isoString);
+  }
+  return new Date(input);
+}
+
 export function formatDateTime(input?: string | number | Date): string {
   if (!input) return "";
-  const date = new Date(input);
+  const date = parseDateHelper(input);
   if (isNaN(date.getTime())) return "";
   const dd = String(date.getDate()).padStart(2, "0");
   const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -21,7 +36,7 @@ export function formatDateTime(input?: string | number | Date): string {
 // Format date to dd-MM-yyyy (no time)
 export function formatDate(input?: string | number | Date): string {
   if (!input) return "";
-  const date = new Date(input);
+  const date = parseDateHelper(input);
   if (isNaN(date.getTime())) return "";
   const dd = String(date.getDate()).padStart(2, "0");
   const mm = String(date.getMonth() + 1).padStart(2, "0");
