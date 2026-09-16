@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, AlarmClock, Building2, MapPin, CheckCircle, Paperclip, FileText, X, ChevronLeft, ChevronRight, Camera, FolderOpen } from "lucide-react";
-import { formatDateTime, displayValue } from "@/lib/utils";
+import { formatDateTime, displayValue, parseDateHelper } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -352,7 +352,7 @@ const SalesSupportDetail = () => {
     let deadline = "";
     if (data?.deadline) {
       try {
-        const d = new Date(data.deadline);
+        const d = parseDateHelper(data.deadline);
         if (!isNaN(d.getTime())) {
           const pad = (n: number) => String(n).padStart(2, "0");
           deadline = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -368,7 +368,7 @@ const SalesSupportDetail = () => {
     let completeDate = "";
     if (data?.activityInfo?.endTime) {
       try {
-        const d = new Date(data.activityInfo.endTime);
+        const d = parseDateHelper(data.activityInfo.endTime);
         if (!isNaN(d.getTime())) {
           const pad = (n: number) => String(n).padStart(2, "0");
           completeDate = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
