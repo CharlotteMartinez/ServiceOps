@@ -1,3 +1,4 @@
+import { getLocalISOString } from "@/lib/utils";
 // Lightweight API client with base URL and JSON helpers
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
@@ -302,7 +303,7 @@ const mockTickets: TicketSummary[] = [
         title: "Lắp đặt máy phân tích",
         customer: "Công ty ABC",
         address: "123 Nguyễn Huệ, Q1, TP.HCM",
-        deadline: new Date().toISOString(),
+        deadline: getLocalISOString(),
         status: "assigned",
     },
     {
@@ -311,7 +312,7 @@ const mockTickets: TicketSummary[] = [
         title: "Bảo trì thiết bị định kỳ",
         customer: "Trường ĐH XYZ",
         address: "456 Lê Lợi, Q3, TP.HCM",
-        deadline: new Date().toISOString(),
+        deadline: getLocalISOString(),
         status: "in-progress",
     },
     {
@@ -320,7 +321,7 @@ const mockTickets: TicketSummary[] = [
         title: "Hỗ trợ cấu hình LIS",
         customer: "Bệnh viện DEF",
         address: "789 Hai Bà Trưng, Q1, TP.HCM",
-        deadline: new Date().toISOString(),
+        deadline: getLocalISOString(),
         status: "assigned",
     },
     {
@@ -329,7 +330,7 @@ const mockTickets: TicketSummary[] = [
         title: "Khảo sát nhu cầu đào tạo",
         customer: "Trung tâm Xét nghiệm ABC",
         address: "89 Điện Biên Phủ, Bình Thạnh, TP.HCM",
-        deadline: new Date().toISOString(),
+        deadline: getLocalISOString(),
         status: "in-progress",
     },
     {
@@ -338,7 +339,7 @@ const mockTickets: TicketSummary[] = [
         title: "Báo cáo hỗ trợ sau đào tạo",
         customer: "BV Quốc tế",
         address: "01 Phạm Ngọc Thạch, Q3, TP.HCM",
-        deadline: new Date().toISOString(),
+        deadline: getLocalISOString(),
         status: "completed",
     },
     // Maintenance samples
@@ -348,7 +349,7 @@ const mockTickets: TicketSummary[] = [
         title: "Bảo trì hệ thống tủ lạnh mẫu",
         customer: "BV Nhi Đồng 1",
         address: "34 Lý Tự Trọng, Q1, TP.HCM",
-        deadline: new Date().toISOString(),
+        deadline: getLocalISOString(),
         status: "assigned",
     },
     {
@@ -357,7 +358,7 @@ const mockTickets: TicketSummary[] = [
         title: "Sửa chữa máy ly tâm phòng lab",
         customer: "Trung tâm Xét nghiệm ABC",
         address: "89 Điện Biên Phủ, Bình Thạnh, TP.HCM",
-        deadline: new Date().toISOString(),
+        deadline: getLocalISOString(),
         status: "in-progress",
     },
     {
@@ -366,7 +367,7 @@ const mockTickets: TicketSummary[] = [
         title: "Bảo dưỡng máy đo đông máu",
         customer: "Bệnh viện Quốc tế",
         address: "01 Phạm Ngọc Thạch, Q3, TP.HCM",
-        deadline: new Date().toISOString(),
+        deadline: getLocalISOString(),
         status: "completed",
     },
     {
@@ -375,7 +376,7 @@ const mockTickets: TicketSummary[] = [
         title: "Sửa chữa máy ủ ấm",
         customer: "Phòng thí nghiệm NanoLab",
         address: "22 Nguyễn Thị Minh Khai, Q1, TP.HCM",
-        deadline: new Date().toISOString(),
+        deadline: getLocalISOString(),
         status: "in-progress",
     },
 ];
@@ -420,7 +421,7 @@ const mockTicketDetails: Record<string, TicketDetail> = {
             address: "789 Hai Bà Trưng, Q1, TP.HCM",
             contactPhone: "0907 111 222",
         },
-        activityInfo: { subject: "Cấu hình LIS", description: "Chuẩn HL7 và mapping kết quả", owner: "Nguyễn Kỹ Thuật", startTime: new Date().toISOString() },
+        activityInfo: { subject: "Cấu hình LIS", description: "Chuẩn HL7 và mapping kết quả", owner: "Nguyễn Kỹ Thuật", startTime: getLocalISOString() },
         activityResult: undefined,
         notes: "Chờ KH xác nhận lịch triển khai",
     },
@@ -431,7 +432,7 @@ const mockTicketDetails: Record<string, TicketDetail> = {
             address: "89 Điện Biên Phủ, Bình Thạnh, TP.HCM",
             contactPhone: "0902 345 678",
         },
-        activityInfo: { subject: "Khảo sát đào tạo", description: "Kế hoạch training phần mềm", owner: "Trần Support", startTime: new Date().toISOString() },
+        activityInfo: { subject: "Khảo sát đào tạo", description: "Kế hoạch training phần mềm", owner: "Trần Support", startTime: getLocalISOString() },
         activityResult: { time: undefined, note: undefined, imageUrls: [] },
         notes: "Đang thực hiện khảo sát nhu cầu",
     },
@@ -442,8 +443,8 @@ const mockTicketDetails: Record<string, TicketDetail> = {
             address: "01 Phạm Ngọc Thạch, Q3, TP.HCM",
             contactPhone: "0933 888 999",
         },
-        activityInfo: { subject: "Hỗ trợ sau đào tạo", description: "Rà soát quy trình nghiệm thu", owner: "Lê Hỗ Trợ", startTime: new Date().toISOString(), endTime: new Date().toISOString() },
-        activityResult: { time: new Date().toISOString(), note: "Hoàn tất hỗ trợ, bàn giao biên bản", imageUrls: [] },
+        activityInfo: { subject: "Hỗ trợ sau đào tạo", description: "Rà soát quy trình nghiệm thu", owner: "Lê Hỗ Trợ", startTime: getLocalISOString(), endTime: getLocalISOString() },
+        activityResult: { time: getLocalISOString(), note: "Hoàn tất hỗ trợ, bàn giao biên bản", imageUrls: [] },
         notes: "Đã hoàn thành",
     },
     MT101: {
@@ -481,9 +482,9 @@ const mockTicketDetails: Record<string, TicketDetail> = {
             { model: "Centrifuge 5000", serial: "CF-5000-221", quantity: 1 },
         ],
         notes: "Máy phát tiếng ồn lớn ở 3000 rpm, đang thay dây curoa.",
-        firstResponse: { time: new Date().toISOString(), note: "Đã liên hệ khách, xác nhận sự cố", imageUrls: [] },
-        supplierInstruction: { time: new Date().toISOString(), note: "Nhận hướng dẫn thay dây hợp chuẩn", imageUrls: [] },
-        startExecution: { time: new Date().toISOString(), note: "Bắt đầu tháo lắp thay dây", imageUrls: [] },
+        firstResponse: { time: getLocalISOString(), note: "Đã liên hệ khách, xác nhận sự cố", imageUrls: [] },
+        supplierInstruction: { time: getLocalISOString(), note: "Nhận hướng dẫn thay dây hợp chuẩn", imageUrls: [] },
+        startExecution: { time: getLocalISOString(), note: "Bắt đầu tháo lắp thay dây", imageUrls: [] },
         resultRecord: { time: undefined, note: undefined, imageUrls: [] },
     },
     MT103: {
@@ -500,10 +501,10 @@ const mockTicketDetails: Record<string, TicketDetail> = {
             { model: "Coagulation Analyzer C200", serial: "CG-200-XY1", quantity: 1 },
         ],
         notes: "Đã bảo dưỡng hoàn tất, thiết bị hoạt động ổn định.",
-        firstResponse: { time: new Date().toISOString(), note: "Tiếp nhận yêu cầu, xác nhận lịch", imageUrls: [] },
-        supplierInstruction: { time: new Date().toISOString(), note: "Kiểm tra theo manual hãng", imageUrls: [] },
-        startExecution: { time: new Date().toISOString(), note: "Bắt đầu bảo dưỡng", imageUrls: [] },
-        resultRecord: { time: new Date().toISOString(), note: "Thiết bị chạy ổn định sau bảo dưỡng", imageUrls: [] },
+        firstResponse: { time: getLocalISOString(), note: "Tiếp nhận yêu cầu, xác nhận lịch", imageUrls: [] },
+        supplierInstruction: { time: getLocalISOString(), note: "Kiểm tra theo manual hãng", imageUrls: [] },
+        startExecution: { time: getLocalISOString(), note: "Bắt đầu bảo dưỡng", imageUrls: [] },
+        resultRecord: { time: getLocalISOString(), note: "Thiết bị chạy ổn định sau bảo dưỡng", imageUrls: [] },
     },
     MT104: {
         ...mockTickets.find((t) => t.id === "MT104")!,
@@ -520,10 +521,10 @@ const mockTicketDetails: Record<string, TicketDetail> = {
             { model: "Incubator 100", serial: "INC-100-7788", quantity: 1 },
         ],
         notes: "Đang theo dõi sai số nhiệt độ ±2°C.",
-        firstResponse: { time: new Date().toISOString(), note: "Gọi xác nhận triệu chứng với KH", imageUrls: ["/img/mock/f1.jpg"] },
-        supplierInstruction: { time: new Date().toISOString(), note: "Hãng hướng dẫn thay cảm biến", imageUrls: ["/img/mock/s1.jpg"] },
-        startExecution: { time: new Date().toISOString(), note: "Đã tháo vỏ, bắt đầu thay cảm biến", imageUrls: ["/img/mock/st1.jpg"] },
-        resultRecord: { time: new Date().toISOString(), note: "Tạm thời chạy ổn định, chờ theo dõi 24h", imageUrls: ["/img/mock/r1.jpg"] },
+        firstResponse: { time: getLocalISOString(), note: "Gọi xác nhận triệu chứng với KH", imageUrls: ["/img/mock/f1.jpg"] },
+        supplierInstruction: { time: getLocalISOString(), note: "Hãng hướng dẫn thay cảm biến", imageUrls: ["/img/mock/s1.jpg"] },
+        startExecution: { time: getLocalISOString(), note: "Đã tháo vỏ, bắt đầu thay cảm biến", imageUrls: ["/img/mock/st1.jpg"] },
+        resultRecord: { time: getLocalISOString(), note: "Tạm thời chạy ổn định, chờ theo dõi 24h", imageUrls: ["/img/mock/r1.jpg"] },
     },
 };
 
@@ -837,7 +838,7 @@ export async function getUnassignedTickets(): Promise<ApiResponse<{ items: Ticke
                 title: item.customer || "Khách hàng",
                 customer: item.customer || "Khách hàng",
                 address: item.address === "undefined" ? "" : (item.address || ""),
-                deadline: item.deadline || new Date().toISOString(),
+                deadline: item.deadline || getLocalISOString(),
                 status: "assigned" as TicketStatus,
                 statusDisplayLabel: "Chưa phân công"
             };
@@ -877,7 +878,7 @@ export async function getUnassignedTickets(): Promise<ApiResponse<{ items: Ticke
                 title: item.customer || "Khách hàng",
                 customer: item.customer || "Khách hàng",
                 address: item.address === "undefined" ? "" : (item.address || ""),
-                deadline: item.deadline || new Date().toISOString(),
+                deadline: item.deadline || getLocalISOString(),
                 status: "assigned" as TicketStatus,
                 statusDisplayLabel: "Chưa phân công"
             };
@@ -911,7 +912,7 @@ export async function createActivityTicket(input: CreateActivityTicketInput): Pr
             title: input.subject,
             customer: input.customer,
             address: input.address,
-            deadline: new Date().toISOString(),
+            deadline: getLocalISOString(),
             status: input.status || "in-progress",
         };
         mockTickets.push(summary);
@@ -926,10 +927,10 @@ export async function createActivityTicket(input: CreateActivityTicketInput): Pr
                 subject: input.subject,
                 description: input.description,
                 owner: input.owner || "Kỹ thuật viên",
-                startTime: new Date().toISOString(),
+                startTime: getLocalISOString(),
                 endTime: input.completedAt,
             },
-            activityResult: input.status === "completed" ? { time: input.completedAt || new Date().toISOString(), note: input.notes, imageUrls: [] } : { time: undefined, note: undefined, imageUrls: [] },
+            activityResult: input.status === "completed" ? { time: input.completedAt || getLocalISOString(), note: input.notes, imageUrls: [] } : { time: undefined, note: undefined, imageUrls: [] },
             orderInfo: input.orderCode ? { orderCode: input.orderCode, itemsCount: 0, secretCodes: [] } : undefined,
             notes: input.notes || "",
         } as TicketDetail;
@@ -1046,7 +1047,7 @@ export async function fetchDeliveryInstallTickets(filterStatus?: TicketStatus): 
             projectCode: it.project_code,
             customer: it.customer_name || "Khách hàng",
             address: it.address || "",
-            deadline: it.deadline || it.assign_time || it.created_time || new Date().toISOString(),
+            deadline: it.deadline || it.assign_time || it.created_time || getLocalISOString(),
             status: mapExternalStatusToAppStatus(it.status),
             statusDisplayLabel: mapExternalStatusToDisplay(it.status),
             products,
@@ -1230,7 +1231,7 @@ export async function fetchDeliveryInstallTicketDetail(ticketId: string): Promis
         projectCode: d.order_id,
         customer: d.customer_name || "Khách hàng",
         address: d.address || "",
-        deadline: d.deadline || d.assign_time || d.created_time || new Date().toISOString(),
+        deadline: d.deadline || d.assign_time || d.created_time || getLocalISOString(),
         status: mapExternalStatusToAppStatus(d.status),
         statusDisplayLabel: mapExternalStatusToDisplay(d.status),
         description: d.description,
@@ -1455,7 +1456,7 @@ export async function fetchMaintenanceTickets(filterStatus?: TicketStatus): Prom
         projectCode: it.order_id,
         customer: it.customer_name || "Khách hàng",
         address: it.address || "",
-        deadline: it.deadline || it.assign_time || it.created_time || new Date().toISOString(),
+        deadline: it.deadline || it.assign_time || it.created_time || getLocalISOString(),
         status: mapExternalStatusToAppStatus(it.status),
         statusDisplayLabel: mapExternalStatusToDisplay(it.status),
         subTypeLabel: it.type,
@@ -1493,7 +1494,7 @@ export async function fetchMaintenanceTicketDetail(ticketId: string): Promise<Ap
         projectCode: undefined,
         customer: d.customer_name || "Khách hàng",
         address: d.order_detail?.deliveryAddress || d.company || "",
-        deadline: d.request_time || d.assign_time || d.start_time || new Date().toISOString(),
+        deadline: d.request_time || d.assign_time || d.start_time || getLocalISOString(),
         status: mapExternalStatusToAppStatus(d.status),
         statusDisplayLabel: mapExternalStatusToDisplay(d.status),
         description: d.problem_description,
@@ -1887,7 +1888,7 @@ export async function fetchActivitySupportTickets(filterStatus?: TicketStatus): 
         projectCode: it.order_id,
         customer: it.customer_name || "Khách hàng",
         address: "",
-        deadline: it.deadline || it.created_time || new Date().toISOString(),
+        deadline: it.deadline || it.created_time || getLocalISOString(),
         status: mapExternalStatusToAppStatus(it.status),
         statusDisplayLabel: mapExternalStatusToDisplay(it.status),
         subTypeLabel: it.type,
@@ -1971,7 +1972,7 @@ export async function fetchActivitySupportTicketDetail(ticketId: string): Promis
     const email = sanitize(customerInfoRaw.email);
     const orderId = sanitize(relatedOrderRaw.order_id);
     const statusLabel = sanitize(statusRaw.current);
-    const deadline = sanitize(statusRaw.deadline) || sanitize(timestampsRaw.created_at) || new Date().toISOString();
+    const deadline = sanitize(statusRaw.deadline) || sanitize(timestampsRaw.created_at) || getLocalISOString();
     const completedAt = sanitize(statusRaw.completed_at);
     const resultNotes = sanitize(resultRaw.notes);
     const resultSummary = sanitize(resultRaw.summary);
