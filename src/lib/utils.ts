@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function getLocalISOString(d = new Date()) {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 // Format date to dd-MM-yyyy HH:mm
 export function parseDateHelper(input?: string | number | Date): Date {
   if (!input) return new Date("");
@@ -13,9 +18,8 @@ export function parseDateHelper(input?: string | number | Date): Date {
     if (isoString.includes(" ") && !isoString.includes("T")) {
       isoString = isoString.replace(" ", "T");
     }
-    if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(isoString) && isoString.includes("T")) {
-       isoString += "Z";
-    }
+    // Remove any trailing Z or +HH:mm or -HH:mm so the browser always treats it as local time
+    isoString = isoString.replace(/(Z|[+-]\d{2}:?\d{2})$/i, "");
     return new Date(isoString);
   }
   return new Date(input);
